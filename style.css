@@ -1,0 +1,363 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+  background: #000000;
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+
+canvas {
+  display: block;
+}
+
+/* =========================================
+   TICKET MENU
+========================================= */
+
+#ticket-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background:
+    rgba(2, 3, 5, 0.76);
+
+  backdrop-filter:
+    blur(12px);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease;
+}
+
+#ticket-menu.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.ticket-window {
+  position: relative;
+
+  width:
+    min(480px, 94vw);
+
+  padding:
+    48px 44px 42px;
+
+  color: #e8ebf0;
+  background: #17191e;
+
+  border:
+    1px solid
+    rgba(220, 230, 245, 0.2);
+
+  box-shadow:
+    0 30px 90px
+    rgba(0, 0, 0, 0.55);
+
+  transform:
+    translateY(18px)
+    scale(0.98);
+
+  transition:
+    transform 0.25s ease;
+}
+
+#ticket-menu.visible
+.ticket-window {
+  transform:
+    translateY(0)
+    scale(1);
+}
+
+#ticket-menu-close {
+  position: absolute;
+  top: 14px;
+  right: 17px;
+
+  width: 34px;
+  height: 34px;
+
+  padding: 0;
+
+  color:
+    rgba(255, 255, 255, 0.72);
+
+  background: transparent;
+  border: 0;
+
+  font-size: 27px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.ticket-label {
+  margin-bottom: 28px;
+
+  color:
+    rgba(210, 220, 235, 0.48);
+
+  font-size: 10px;
+  letter-spacing: 0.24em;
+}
+
+.ticket-window h2 {
+  margin: 0 0 16px;
+
+  font-size:
+    clamp(28px, 5vw, 42px);
+
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.ticket-description {
+  max-width: 360px;
+  margin: 0 0 38px;
+
+  color:
+    rgba(225, 230, 238, 0.62);
+
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.ticket-information {
+  display: grid;
+  gap: 1px;
+
+  margin-bottom: 34px;
+
+  background:
+    rgba(255, 255, 255, 0.1);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.1);
+}
+
+.ticket-information div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 14px 16px;
+
+  background: #17191e;
+}
+
+.ticket-information span {
+  color:
+    rgba(220, 228, 240, 0.4);
+
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.ticket-information strong {
+  color:
+    rgba(240, 243, 248, 0.88);
+
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+}
+
+#ticket-menu-button {
+  width: 100%;
+
+  padding: 16px 20px;
+
+  color: #15171b;
+  background: #e4e8ef;
+
+  border: 0;
+
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+
+  cursor: pointer;
+}
+
+#ticket-menu-button:hover {
+  background: #ffffff;
+}
+
+#ticket-menu-button.reserved {
+  color: #e8edf5;
+  background: #313b4b;
+}
+/* =========================================
+   CINEMA VIEWER
+========================================= */
+
+#cinema-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background:
+    rgba(0, 0, 0, 0.94);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease;
+}
+
+#cinema-viewer.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.cinema-viewer-screen {
+  position: relative;
+
+  width: min(
+    1400px,
+    calc(100vw - 48px)
+  );
+
+  aspect-ratio: 16 / 9;
+
+  overflow: hidden;
+
+  background: #080808;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.14);
+
+  box-shadow:
+    0 0 90px
+    rgba(220, 225, 235, 0.08);
+}
+
+.cinema-viewer-screen:fullscreen {
+  width: 100vw;
+  height: 100vh;
+
+  border: 0;
+}
+
+#cinema-viewer-close {
+  position: absolute;
+
+  top: 18px;
+  right: 22px;
+
+  z-index: 3;
+
+  width: 42px;
+  height: 42px;
+
+  padding: 0;
+
+  color: rgba(
+    255,
+    255,
+    255,
+    0.82
+  );
+
+  background:
+    rgba(0, 0, 0, 0.42);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.18);
+
+  border-radius: 50%;
+
+  font-size: 27px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.cinema-placeholder {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 18px;
+
+  color: #f1f1ee;
+
+  background:
+    radial-gradient(
+      circle at 50% 45%,
+      #252525 0%,
+      #111111 40%,
+      #050505 100%
+    );
+}
+
+.cinema-placeholder-label {
+  color:
+    rgba(255, 255, 255, 0.38);
+
+  font-size: 10px;
+  letter-spacing: 0.38em;
+}
+
+.cinema-placeholder-title {
+  font-size:
+    clamp(32px, 7vw, 100px);
+
+  font-weight: 500;
+  letter-spacing: 0.18em;
+}
+
+.cinema-placeholder-note {
+  color:
+    rgba(255, 255, 255, 0.32);
+
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
