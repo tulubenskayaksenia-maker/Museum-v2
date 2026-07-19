@@ -1,10 +1,32 @@
 import {
-  THREE
+  THREE,
+  camera
 } from "../core/scene.js";
 
 import {
   ARCHES
 } from "../config/layout.js";
+
+import {
+  hasTicket
+} from "../ui/ticketMenu.js";
+
+// =====================================================
+// TICKET COMPUTER INDICATORS
+// =====================================================
+
+const ticketComputerIndicators = [];
+
+const indicatorWorldPosition =
+  new THREE.Vector3();
+
+const indicatorDirection =
+  new THREE.Vector3();
+
+const cameraDirection =
+  new THREE.Vector3();
+
+let indicatorClock = 0;
 
 // =====================================================
 // MATERIALS
@@ -109,6 +131,7 @@ export function createTicketBooth(parent) {
 
   createTicketTray(booth);
   createBoothLights(booth);
+  createTicketComputerIndicators(booth);
 
   booth.traverse((child) => {
     if (!child.isMesh) {
@@ -132,6 +155,252 @@ export function createTicketBooth(parent) {
   createTicketBladeSign(parent);
 
   return booth;
+}
+
+
+// =====================================================
+// UPDATE TICKET COMPUTER INDICATORS
+// =====================================================
+
+export function updateTicketBoothIndicator() {
+  if (
+    ticketComputerIndicators.length === 0
+  ) {
+    return;
+  }
+
+  indicatorClock += 0.016;
+
+  camera.getWorldDirection(
+    cameraDirection
+  );
+
+  const ticketReserved =
+    hasTicket();
+
+  ticketComputerIndicators.forEach(
+    (indicator, index) => {
+      indicator.getWorldPosition(
+        indicatorWorldPosition
+      );
+
+      indicatorDirection
+        .copy(indicatorWorldPosition)
+        .sub(camera.position);
+
+      const distance =
+        indicatorDirection.length();
+
+      indicatorDirection.normalize();
+
+      const lookingAtIndicator =
+        cameraDirection.dot(
+          indicatorDirection
+        );
+
+      const shouldAppear =
+        !ticketReserved &&
+        distance < 24 &&
+        lookingAtIndicator > 0.88;
+
+      const pulse =
+        0.82 +
+        Math.sin(
+          indicatorClock * 4.2 +
+          index * 0.7
+        ) * 0.18;
+
+      const targetOpacity =
+        shouldAppear
+          ? pulse
+          : 0;
+
+      indicator.material.opacity =
+        THREE.MathUtils.lerp(
+          indicator.material.opacity,
+          targetOpacity,
+          0.12
+        );
+
+      indicator.position.y =
+        indicator.userData.baseY +
+        Math.sin(
+          indicatorClock * 2.8 +
+          index * 0.6
+        ) * 0.08;
+
+      indicator.visible =
+        indicator.material.opacity > 0.015;
+    }
+  );
+}
+
+// =====================================================
+// CREATE TICKET COMPUTER INDICATORS
+// =====================================================
+
+function createTicketComputerIndicators(
+  parent
+) {
+  ticketComputerIndicators.length = 0;
+
+  const texture =
+    createArrowTexture();
+
+  [-1.45, 1.45].forEach(
+    (x, index) => {
+      const material =
+        new THREE.SpriteMaterial({
+          map: texture,
+          transparent: true,
+          opacity: 0,
+          depthTest: true,
+          depthWrite: false,
+          toneMapped: false
+        });
+
+      const indicator =
+        new THREE.Sprite(
+          material
+        );
+
+      indicator.name =
+        `Ticket Computer Arrow ${
+          index + 1
+        }`;
+
+      indicator.position.set(
+        x,
+        4.05,
+        0.12
+      );
+
+      indicator.scale.set(
+        0.72,
+        1.2,
+        1
+      );
+
+      indicator.center.set(
+        0.5,
+        0.18
+      );
+
+      indicator.renderOrder = 20;
+
+      indicator.userData.baseY =
+        indicator.position.y;
+
+      indicator.visible = false;
+
+      parent.add(indicator);
+
+      ticketComputerIndicators.push(
+        indicator
+      );
+    }
+  );
+}
+
+// =====================================================
+// ARROW TEXTURE
+// =====================================================
+
+function createArrowTexture() {
+  const canvas =
+    document.createElement(
+      "canvas"
+    );
+
+  canvas.width = 256;
+  canvas.height = 384;
+
+  const context =
+    canvas.getContext("2d");
+
+  context.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+  context.lineCap =
+    "round";
+
+  context.lineJoin =
+    "round";
+
+  context.strokeStyle =
+    "rgba(245, 248, 255, 0.98)";
+
+  context.shadowColor =
+    "rgba(160, 200, 255, 0.9)";
+
+  context.shadowBlur = 22;
+
+  context.lineWidth = 18;
+
+  drawChevron(
+    context,
+    128,
+    105,
+    62,
+    42
+  );
+
+  drawChevron(
+    context,
+    128,
+    205,
+    62,
+    42
+  );
+
+  const texture =
+    new THREE.CanvasTexture(
+      canvas
+    );
+
+  texture.colorSpace =
+    THREE.SRGBColorSpace;
+
+  texture.minFilter =
+    THREE.LinearFilter;
+
+  texture.magFilter =
+    THREE.LinearFilter;
+
+  texture.needsUpdate = true;
+
+  return texture;
+}
+
+function drawChevron(
+  context,
+  centerX,
+  centerY,
+  halfWidth,
+  height
+) {
+  context.beginPath();
+
+  context.moveTo(
+    centerX - halfWidth,
+    centerY
+  );
+
+  context.lineTo(
+    centerX,
+    centerY + height
+  );
+
+  context.lineTo(
+    centerX + halfWidth,
+    centerY
+  );
+
+  context.stroke();
 }
 
 // =====================================================

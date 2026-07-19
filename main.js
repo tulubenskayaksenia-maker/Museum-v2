@@ -54,6 +54,10 @@ import {
 } from "./objects/corridorSigns.js";
 
 import {
+  updateTicketBoothIndicator
+} from "./objects/ticketBooth.js";
+
+import {
   setupSculptureViewer
 } from "./ui/sculptureViewer.js";
 
@@ -69,6 +73,10 @@ import {
 import {
   setupCinemaViewer
 } from "./ui/cinemaViewer.js";
+
+import {
+  setupOnboarding
+} from "./ui/onboarding.js";
 
 import {
   updateArtworkViewer
@@ -125,15 +133,6 @@ const menWC =
 const corridor =
   createCorridor();
 
-/*
-  Все четыре вывески:
-
-  GALLERY I
-  GALLERY II
-  SCULPTURE
-  CINEMA
-*/
-
 createCorridorSigns(
   corridor
 );
@@ -152,18 +151,8 @@ const room02 =
 // SECOND ROOMS
 // =====================================================
 
-/*
-  Вторая комната слева:
-  SCULPTURE
-*/
-
 const room03 =
   createSculptureRoom();
-
-/*
-  Вторая комната справа:
-  CINEMA
-*/
 
 const room04 =
   createCinemaRoom();
@@ -186,6 +175,7 @@ const room06 =
 // UI
 // =====================================================
 
+setupOnboarding();
 setupTicketMenu();
 setupCinemaViewer();
 setupSculptureViewer();
@@ -224,6 +214,7 @@ function animate() {
   updateMovement();
   updateArtworkViewer();
   updateSculptureRoom();
+  updateTicketBoothIndicator();
 
   renderer.render(
     scene,

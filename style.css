@@ -361,3 +361,864 @@ canvas {
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
+/* =========================================
+   TICKET MENU
+========================================= */
+
+#ticket-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(2, 3, 5, 0.76);
+  backdrop-filter: blur(12px);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease;
+}
+
+#ticket-menu.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.ticket-window {
+  position: relative;
+
+  width: min(480px, 94vw);
+
+  padding: 48px 44px 42px;
+
+  color: #e8ebf0;
+  background: #17191e;
+
+  border: 1px solid
+    rgba(220, 230, 245, 0.2);
+
+  box-shadow:
+    0 30px 90px
+    rgba(0, 0, 0, 0.55);
+
+  transform:
+    translateY(18px)
+    scale(0.98);
+
+  transition:
+    transform 0.25s ease;
+}
+
+#ticket-menu.visible .ticket-window {
+  transform:
+    translateY(0)
+    scale(1);
+}
+
+#ticket-menu-close {
+  position: absolute;
+  top: 14px;
+  right: 17px;
+
+  width: 34px;
+  height: 34px;
+
+  padding: 0;
+
+  color: rgba(255, 255, 255, 0.72);
+  background: transparent;
+  border: 0;
+
+  font-size: 27px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.ticket-label {
+  margin-bottom: 28px;
+
+  color: rgba(210, 220, 235, 0.48);
+
+  font-size: 10px;
+  letter-spacing: 0.24em;
+}
+
+.ticket-window h2 {
+  margin: 0 0 16px;
+
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.ticket-description {
+  max-width: 360px;
+  margin: 0 0 38px;
+
+  color: rgba(225, 230, 238, 0.62);
+
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.ticket-information {
+  display: grid;
+  gap: 1px;
+
+  margin-bottom: 34px;
+
+  background: rgba(255, 255, 255, 0.1);
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.1);
+}
+
+.ticket-information div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 14px 16px;
+
+  background: #17191e;
+}
+
+.ticket-information span {
+  color: rgba(220, 228, 240, 0.4);
+
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.ticket-information strong {
+  color: rgba(240, 243, 248, 0.88);
+
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+}
+
+#ticket-menu-button {
+  width: 100%;
+
+  padding: 16px 20px;
+
+  color: #15171b;
+  background: #e4e8ef;
+
+  border: 0;
+
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+
+  cursor: pointer;
+}
+
+#ticket-menu-button:hover {
+  background: #ffffff;
+}
+
+#ticket-menu-button.reserved {
+  color: #e8edf5;
+  background: #313b4b;
+}
+/* =====================================================
+   MUSEUM ONBOARDING — CENTRAL WINDOW
+===================================================== */
+
+#museum-onboarding,
+#museum-instructions {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(40, 43, 50, 0.3),
+      rgba(5, 6, 8, 0.88)
+    );
+
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.35s ease,
+    visibility 0.35s ease;
+}
+
+#museum-onboarding.visible,
+#museum-instructions.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* =====================================================
+   MAIN CARD
+===================================================== */
+
+.museum-onboarding-window,
+.museum-instructions-window {
+  position: relative;
+
+  width: min(560px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
+
+  padding: 54px 48px 46px;
+
+  color: #f3f1eb;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(27, 29, 34, 0.98),
+      rgba(13, 14, 17, 0.98)
+    );
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.16);
+
+  box-shadow:
+    0 40px 120px
+    rgba(0, 0, 0, 0.7);
+
+  transform:
+    translateY(24px)
+    scale(0.96);
+
+  transition:
+    transform 0.4s
+    cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+#museum-onboarding.visible
+.museum-onboarding-window,
+#museum-instructions.visible
+.museum-instructions-window {
+  transform:
+    translateY(0)
+    scale(1);
+}
+
+/* =====================================================
+   DECORATIVE CENTRAL IMAGE
+===================================================== */
+
+.museum-onboarding-window::before {
+  content: "";
+
+  display: block;
+
+  width: 100%;
+  height: 210px;
+
+  margin-bottom: 36px;
+
+  background:
+    radial-gradient(
+      circle at 50% 28%,
+      rgba(255, 255, 255, 0.45),
+      rgba(255, 255, 255, 0.06) 26%,
+      transparent 55%
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(215, 220, 228, 0.18),
+      rgba(16, 17, 20, 0.05)
+    );
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.12);
+
+  box-shadow:
+    inset 0 0 60px
+    rgba(255, 255, 255, 0.04);
+
+  clip-path:
+    polygon(
+      18% 100%,
+      18% 40%,
+      25% 40%,
+      25% 24%,
+      75% 24%,
+      75% 40%,
+      82% 40%,
+      82% 100%
+    );
+}
+
+.museum-onboarding-window::after {
+  content: "";
+
+  position: absolute;
+
+  top: 90px;
+  left: 50%;
+
+  width: 92px;
+  height: 132px;
+
+  transform:
+    translateX(-50%);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.3);
+
+  border-radius:
+    46px 46px 0 0;
+
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(235, 239, 245, 0.12),
+      rgba(8, 9, 11, 0.75)
+    );
+
+  box-shadow:
+    0 0 45px
+    rgba(225, 232, 245, 0.12);
+}
+
+/* =====================================================
+   TYPOGRAPHY
+===================================================== */
+
+.museum-onboarding-label {
+  margin-bottom: 18px;
+
+  color:
+    rgba(232, 235, 240, 0.46);
+
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.museum-onboarding-window h1,
+.museum-instructions-window h2 {
+  margin:
+    0 0 18px;
+
+  color: #f3f1eb;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-size:
+    clamp(38px, 7vw, 58px);
+
+  font-weight: 400;
+  line-height: 0.95;
+}
+
+.museum-onboarding-window p {
+  max-width: 410px;
+
+  margin:
+    0 0 34px;
+
+  color:
+    rgba(235, 236, 240, 0.62);
+
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* =====================================================
+   BUTTONS
+===================================================== */
+
+#museum-enter-button,
+#museum-instructions-start {
+  width: 100%;
+
+  padding: 17px 22px;
+
+  color: #16171a;
+  background: #f0eee8;
+
+  border: 0;
+
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+#museum-enter-button:hover,
+#museum-instructions-start:hover {
+  background: #ffffff;
+
+  transform:
+    translateY(-2px);
+}
+
+#museum-open-instructions {
+  width: 100%;
+
+  margin-top: 10px;
+  padding: 15px 22px;
+
+  color:
+    rgba(240, 241, 244, 0.78);
+
+  background:
+    transparent;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.16);
+
+  font-size: 10px;
+  letter-spacing: 0.18em;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+#museum-open-instructions:hover {
+  background:
+    rgba(255, 255, 255, 0.05);
+
+  border-color:
+    rgba(255, 255, 255, 0.3);
+}
+
+/* =====================================================
+   INSTRUCTIONS
+===================================================== */
+
+.museum-controls-list {
+  margin:
+    30px 0 34px;
+}
+
+.museum-control-row {
+  display: grid;
+
+  grid-template-columns:
+    145px 1fr;
+
+  gap: 22px;
+
+  padding:
+    16px 0;
+
+  border-bottom:
+    1px solid
+    rgba(255, 255, 255, 0.09);
+
+  color:
+    rgba(235, 237, 242, 0.62);
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.museum-control-key {
+  color:
+    rgba(250, 250, 250, 0.92);
+
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+
+/* =====================================================
+   CLOSE BUTTON
+===================================================== */
+
+#museum-instructions-close {
+  position: absolute;
+
+  top: 18px;
+  right: 20px;
+
+  width: 36px;
+  height: 36px;
+
+  padding: 0;
+
+  color:
+    rgba(255, 255, 255, 0.72);
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.1);
+
+  border-radius: 50%;
+
+  font-size: 23px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+/* =====================================================
+   HELP BUTTON
+===================================================== */
+
+#museum-help-button {
+  position: fixed;
+
+  right: 22px;
+  bottom: 22px;
+
+  z-index: 4000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+
+  padding: 0;
+
+  color: #f4f2ed;
+
+  background:
+    rgba(15, 16, 19, 0.78);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.2);
+
+  border-radius: 50%;
+
+  backdrop-filter: blur(8px);
+
+  font-family:
+    Georgia,
+    serif;
+
+  font-size: 17px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+#museum-help-button:hover {
+  transform:
+    scale(1.08);
+
+  background:
+    rgba(35, 37, 43, 0.95);
+}
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media
+(max-width: 600px) {
+
+  #museum-onboarding,
+  #museum-instructions {
+    padding: 14px;
+  }
+
+  .museum-onboarding-window,
+  .museum-instructions-window {
+    width: 100%;
+
+    padding:
+      34px 25px 28px;
+  }
+
+  .museum-onboarding-window::before {
+    height: 160px;
+
+    margin-bottom: 28px;
+  }
+
+  .museum-onboarding-window::after {
+    top: 67px;
+
+    width: 70px;
+    height: 102px;
+  }
+
+  .museum-control-row {
+    grid-template-columns:
+      105px 1fr;
+
+    gap: 14px;
+  }
+
+  #museum-help-button {
+    right: 15px;
+    bottom: 15px;
+  }
+}
+/* =====================================================
+   TICKET INDICATOR
+===================================================== */
+
+#ticket-indicator {
+  position: fixed;
+
+  left: 50%;
+  bottom: 34px;
+
+  z-index: 999999;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  min-width: 130px;
+
+  padding:
+    13px
+    22px
+    14px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.32);
+
+  border-radius: 999px;
+
+  background:
+    rgba(8, 8, 8, 0.58);
+
+  color: #ffffff;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  cursor: pointer;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transform:
+    translateX(-50%)
+    translateY(16px);
+
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease,
+    transform 0.25s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+
+  backdrop-filter:
+    blur(10px);
+
+  -webkit-backdrop-filter:
+    blur(10px);
+
+  user-select: none;
+  -webkit-user-select: none;
+
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+#ticket-indicator.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+
+  transform:
+    translateX(-50%)
+    translateY(0);
+
+  animation:
+    ticketIndicatorBlink
+    1.15s
+    ease-in-out
+    infinite;
+}
+
+#ticket-indicator:hover {
+  background:
+    rgba(255, 255, 255, 0.16);
+
+  border-color:
+    rgba(255, 255, 255, 0.75);
+
+  animation-play-state: paused;
+}
+
+#ticket-indicator:active {
+  transform:
+    translateX(-50%)
+    scale(0.96);
+}
+
+/* =====================================================
+   ARROWS
+===================================================== */
+
+.ticket-indicator-arrows {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  height: 24px;
+
+  font-size: 27px;
+  line-height: 1;
+
+  color: #ffffff;
+
+  text-shadow:
+    0 0 10px
+    rgba(255, 255, 255, 0.75);
+
+  animation:
+    ticketArrowsMove
+    0.8s
+    ease-in-out
+    infinite;
+}
+
+.ticket-indicator-arrows span {
+  display: block;
+}
+
+/* =====================================================
+   TEXT
+===================================================== */
+
+.ticket-indicator-label {
+  display: block;
+
+  padding-left: 0.28em;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  line-height: 1;
+
+  letter-spacing: 0.28em;
+
+  text-transform: uppercase;
+
+  color: #ffffff;
+
+  text-shadow:
+    0 2px 12px
+    rgba(0, 0, 0, 0.95);
+}
+
+/* =====================================================
+   ANIMATIONS
+===================================================== */
+
+@keyframes ticketIndicatorBlink {
+  0%,
+  100% {
+    opacity: 1;
+
+    box-shadow:
+      0 0 0
+      rgba(255, 255, 255, 0);
+  }
+
+  50% {
+    opacity: 0.48;
+
+    box-shadow:
+      0 0 24px
+      rgba(255, 255, 255, 0.14);
+  }
+}
+
+@keyframes ticketArrowsMove {
+  0%,
+  100% {
+    transform:
+      translateY(-2px);
+  }
+
+  50% {
+    transform:
+      translateY(6px);
+  }
+}
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+@media (max-width: 700px) {
+  #ticket-indicator {
+    bottom: 24px;
+
+    min-width: 118px;
+
+    padding:
+      11px
+      18px
+      12px;
+  }
+
+  .ticket-indicator-arrows {
+    font-size: 25px;
+  }
+
+  .ticket-indicator-label {
+    font-size: 11px;
+  }
+}

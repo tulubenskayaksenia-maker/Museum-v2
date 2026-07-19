@@ -15,30 +15,88 @@ import {
 
 const partitionMaterial =
   new THREE.MeshStandardMaterial({
-    color: 0x55585f,
-    roughness: 0.92,
-    metalness: 0
+    color: 0x4d5056,
+    roughness: 0.78,
+    metalness: 0.03
   });
 
 const ceramicMaterial =
+  new THREE.MeshPhysicalMaterial({
+    color: 0xf2f1ec,
+    roughness: 0.2,
+    metalness: 0,
+    clearcoat: 0.45,
+    clearcoatRoughness: 0.12
+  });
+
+const ceramicInsideMaterial =
   new THREE.MeshStandardMaterial({
-    color: 0xd7d8d5,
-    roughness: 0.48,
+    color: 0xd9dcda,
+    roughness: 0.35,
     metalness: 0
+  });
+
+const counterMaterial =
+  new THREE.MeshPhysicalMaterial({
+    color: 0xc7c3b9,
+    roughness: 0.28,
+    metalness: 0.04,
+    clearcoat: 0.25,
+    clearcoatRoughness: 0.2
   });
 
 const metalMaterial =
   new THREE.MeshStandardMaterial({
-    color: 0x858b94,
-    roughness: 0.3,
-    metalness: 0.75
+    color: 0xc1c7ce,
+    roughness: 0.13,
+    metalness: 0.96
+  });
+
+const darkMetalMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x34383e,
+    roughness: 0.28,
+    metalness: 0.72
   });
 
 const mirrorMaterial =
+  new THREE.MeshPhysicalMaterial({
+    color: 0xdce5ef,
+    roughness: 0.025,
+    metalness: 0.94,
+    clearcoat: 1,
+    clearcoatRoughness: 0.01,
+    reflectivity: 1,
+    side: THREE.DoubleSide
+  });
+
+const mirrorBackingMaterial =
   new THREE.MeshStandardMaterial({
-    color: 0xaebac8,
-    roughness: 0.08,
-    metalness: 0.82
+    color: 0x16191e,
+    roughness: 0.35,
+    metalness: 0.48
+  });
+
+const ledMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0xfff4dc,
+    emissive: 0xffe6ba,
+    emissiveIntensity: 2.3,
+    roughness: 0.28
+  });
+
+const drainMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x555b63,
+    roughness: 0.12,
+    metalness: 0.94
+  });
+
+const sensorMaterial =
+  new THREE.MeshStandardMaterial({
+    color: 0x101216,
+    roughness: 0.2,
+    metalness: 0.35
   });
 
 // =====================================================
@@ -81,24 +139,26 @@ export function createRestroom({
     backWallZ
   });
 
-  createSink({
+  // Длинная столешница справа.
+  createVanityWall({
     parent: room,
-    x: -3.1,
-    z: -3
+    x: 8.5,
+    z: -2.5,
+    rotationY: -Math.PI / 2
   });
 
-  createSink({
-    parent: room,
-    x: 0,
-    z: -3
-  });
+  // Зеркало в полный рост в женском туалете.
+  if (roomType === "women") {
+    createFullLengthMirror({
+      parent: room,
+      x: -8.53,
+      y: 3.05,
+      z: -2.5,
+      rotationY: Math.PI / 2
+    });
+  }
 
-  createSink({
-    parent: room,
-    x: 3.1,
-    z: -3
-  });
-
+  // Кабинки в глубине.
   createCabin({
     parent: room,
     x: -4.8,
@@ -124,6 +184,7 @@ export function createRestroom({
       return;
     }
 
+    child.castShadow = true;
     child.receiveShadow = true;
   });
 
@@ -215,6 +276,24 @@ function createArchitecture({
   );
 
   parent.add(backWall);
+
+  const ceiling =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        roomWidth,
+        0.18,
+        roomDepth
+      ),
+      wallMaterial
+    );
+
+  ceiling.position.set(
+    0,
+    roomHeight,
+    centerZ
+  );
+
+  parent.add(ceiling);
 }
 
 // =====================================================
@@ -243,92 +322,925 @@ function createTitle({
 }
 
 // =====================================================
-// SINK
+// VANITY WALL
 // =====================================================
 
-function createSink({
+function createVanityWall({
   parent,
   x,
-  z
+  z,
+  rotationY
 }) {
-  const sink =
+  const vanity =
     new THREE.Group();
 
-  const bowl =
-    new THREE.Mesh(
-      new THREE.BoxGeometry(
-        2.2,
-        0.32,
-        0.85
-      ),
-      ceramicMaterial
-    );
-
-  bowl.position.y = 1.05;
-
-  sink.add(bowl);
-
-  const support =
-    new THREE.Mesh(
-      new THREE.BoxGeometry(
-        0.46,
-        1,
-        0.46
-      ),
-      partitionMaterial
-    );
-
-  support.position.y = 0.5;
-
-  sink.add(support);
-
-  const mirror =
-    new THREE.Mesh(
-      new THREE.PlaneGeometry(
-        2.3,
-        2.2
-      ),
-      mirrorMaterial
-    );
-
-  mirror.position.set(
-    0,
-    2.75,
-    -0.46
-  );
-
-  sink.add(mirror);
-
-  const faucet =
-    new THREE.Mesh(
-      new THREE.TorusGeometry(
-        0.18,
-        0.035,
-        8,
-        20,
-        Math.PI
-      ),
-      metalMaterial
-    );
-
-  faucet.rotation.x =
-    Math.PI / 2;
-
-  faucet.position.set(
-    0,
-    1.42,
-    0
-  );
-
-  sink.add(faucet);
-
-  sink.position.set(
+  vanity.position.set(
     x,
     0,
     z
   );
 
-  parent.add(sink);
+  vanity.rotation.y =
+    rotationY;
+
+  const counterWidth = 11.2;
+  const counterDepth = 1.3;
+
+  // Столешница.
+  const counter =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        counterWidth,
+        0.2,
+        counterDepth
+      ),
+      counterMaterial
+    );
+
+  counter.position.set(
+    0,
+    1.15,
+    0.65
+  );
+
+  vanity.add(counter);
+
+  // Передняя кромка.
+  const frontEdge =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        counterWidth + 0.04,
+        0.26,
+        0.13
+      ),
+      ceramicMaterial
+    );
+
+  frontEdge.position.set(
+    0,
+    1.04,
+    1.26
+  );
+
+  vanity.add(frontEdge);
+
+  // Задняя защитная панель.
+  const backsplash =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        counterWidth,
+        0.42,
+        0.1
+      ),
+      counterMaterial
+    );
+
+  backsplash.position.set(
+    0,
+    1.35,
+    0.08
+  );
+
+  vanity.add(backsplash);
+
+  // Нижняя панель.
+  const underPanel =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        counterWidth - 0.15,
+        0.55,
+        0.18
+      ),
+      partitionMaterial
+    );
+
+  underPanel.position.set(
+    0,
+    0.82,
+    0.18
+  );
+
+  vanity.add(underPanel);
+
+  createCounterSupport({
+    parent: vanity,
+    x: -5
+  });
+
+  createCounterSupport({
+    parent: vanity,
+    x: 0
+  });
+
+  createCounterSupport({
+    parent: vanity,
+    x: 5
+  });
+
+  // Три раковины.
+  // Каждая функция создаёт собственную чашу,
+  // слив, трубы и отдельный кран.
+  createBasin({
+    parent: vanity,
+    x: -3.55
+  });
+
+  createBasin({
+    parent: vanity,
+    x: 0
+  });
+
+  createBasin({
+    parent: vanity,
+    x: 3.55
+  });
+
+  createPanoramicMirror({
+    parent: vanity,
+    width: 10.75,
+    height: 2.75,
+    y: 3.08
+  });
+
+  // LED-подсветка.
+  const ledHousing =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        10.45,
+        0.19,
+        0.17
+      ),
+      darkMetalMaterial
+    );
+
+  ledHousing.position.set(
+    0,
+    4.67,
+    0.07
+  );
+
+  vanity.add(ledHousing);
+
+  const ledBar =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        10.18,
+        0.1,
+        0.13
+      ),
+      ledMaterial
+    );
+
+  ledBar.position.set(
+    0,
+    4.61,
+    0.17
+  );
+
+  vanity.add(ledBar);
+
+  // Мягкий свет над столешницей.
+  const vanityLight =
+    new THREE.PointLight(
+      0xffedd1,
+      0.72,
+      12,
+      2
+    );
+
+  vanityLight.position.set(
+    0,
+    4.25,
+    2
+  );
+
+  vanity.add(vanityLight);
+
+  parent.add(vanity);
+}
+
+// =====================================================
+// COUNTER SUPPORT
+// =====================================================
+
+function createCounterSupport({
+  parent,
+  x
+}) {
+  const support =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        0.18,
+        1.02,
+        0.72
+      ),
+      partitionMaterial
+    );
+
+  support.position.set(
+    x,
+    0.53,
+    0.55
+  );
+
+  parent.add(support);
+}
+
+// =====================================================
+// BASIN WITH INDIVIDUAL FAUCET
+// =====================================================
+
+function createBasin({
+  parent,
+  x
+}) {
+  const basin =
+    new THREE.Group();
+
+  // Очень важно:
+  // вся раковина перемещается вместе со своим краном.
+  basin.position.x = x;
+
+  // ---------------------------------------------------
+  // OUTER BASIN
+  // ---------------------------------------------------
+
+  const outerBasin =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.68,
+        0.54,
+        0.26,
+        48
+      ),
+      ceramicMaterial
+    );
+
+  outerBasin.scale.z = 0.72;
+
+  outerBasin.position.set(
+    0,
+    1.15,
+    0.68
+  );
+
+  basin.add(outerBasin);
+
+  // ---------------------------------------------------
+  // INNER BASIN
+  // ---------------------------------------------------
+
+  const innerBasin =
+    new THREE.Mesh(
+      new THREE.CircleGeometry(
+        0.51,
+        48
+      ),
+      ceramicInsideMaterial
+    );
+
+  innerBasin.scale.y = 0.7;
+
+  innerBasin.rotation.x =
+    -Math.PI / 2;
+
+  innerBasin.position.set(
+    0,
+    1.292,
+    0.68
+  );
+
+  basin.add(innerBasin);
+
+  // Внутреннее углубление.
+  const basinDepth =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.47,
+        0.34,
+        0.16,
+        48,
+        1,
+        true
+      ),
+      ceramicInsideMaterial
+    );
+
+  basinDepth.scale.z = 0.7;
+
+  basinDepth.position.set(
+    0,
+    1.22,
+    0.68
+  );
+
+  basin.add(basinDepth);
+
+  // ---------------------------------------------------
+  // DRAIN
+  // ---------------------------------------------------
+
+  const drain =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.09,
+        0.09,
+        0.025,
+        28
+      ),
+      drainMaterial
+    );
+
+  drain.position.set(
+    0,
+    1.31,
+    0.68
+  );
+
+  basin.add(drain);
+
+  // Кольцо вокруг слива.
+  const drainRing =
+    new THREE.Mesh(
+      new THREE.TorusGeometry(
+        0.105,
+        0.012,
+        10,
+        28
+      ),
+      metalMaterial
+    );
+
+  drainRing.rotation.x =
+    Math.PI / 2;
+
+  drainRing.position.set(
+    0,
+    1.325,
+    0.68
+  );
+
+  basin.add(drainRing);
+
+  // ---------------------------------------------------
+  // REALISTIC FAUCET BASE
+  // ---------------------------------------------------
+
+  const faucetBase =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.13,
+        0.15,
+        0.1,
+        32
+      ),
+      metalMaterial
+    );
+
+  faucetBase.position.set(
+    0,
+    1.28,
+    0.18
+  );
+
+  basin.add(faucetBase);
+
+  const baseRing =
+    new THREE.Mesh(
+      new THREE.TorusGeometry(
+        0.135,
+        0.018,
+        10,
+        32
+      ),
+      metalMaterial
+    );
+
+  baseRing.rotation.x =
+    Math.PI / 2;
+
+  baseRing.position.set(
+    0,
+    1.335,
+    0.18
+  );
+
+  basin.add(baseRing);
+
+  // ---------------------------------------------------
+  // FAUCET STEM
+  // ---------------------------------------------------
+
+  const faucetStem =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.06,
+        0.075,
+        0.48,
+        32
+      ),
+      metalMaterial
+    );
+
+  faucetStem.position.set(
+    0,
+    1.54,
+    0.18
+  );
+
+  basin.add(faucetStem);
+
+  // ---------------------------------------------------
+  // CURVED FAUCET NECK
+  // ---------------------------------------------------
+
+  const faucetCurve =
+    new THREE.Mesh(
+      new THREE.TorusGeometry(
+        0.245,
+        0.058,
+        16,
+        48,
+        Math.PI
+      ),
+      metalMaterial
+    );
+
+  faucetCurve.rotation.z =
+    Math.PI / 2;
+
+  faucetCurve.position.set(
+    0,
+    1.76,
+    0.4
+  );
+
+  basin.add(faucetCurve);
+
+  // ---------------------------------------------------
+  // FAUCET SPOUT
+  // ---------------------------------------------------
+
+  const faucetSpout =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.052,
+        0.052,
+        0.25,
+        24
+      ),
+      metalMaterial
+    );
+
+  faucetSpout.rotation.x =
+    Math.PI / 2;
+
+  faucetSpout.position.set(
+    0,
+    1.76,
+    0.64
+  );
+
+  basin.add(faucetSpout);
+
+  // Наконечник крана.
+  const faucetTip =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.06,
+        0.052,
+        0.075,
+        24
+      ),
+      metalMaterial
+    );
+
+  faucetTip.rotation.x =
+    Math.PI / 2;
+
+  faucetTip.position.set(
+    0,
+    1.76,
+    0.785
+  );
+
+  basin.add(faucetTip);
+
+  // Тёмный аэратор.
+  const aerator =
+    new THREE.Mesh(
+      new THREE.CircleGeometry(
+        0.042,
+        20
+      ),
+      sensorMaterial
+    );
+
+  aerator.position.set(
+    0,
+    1.76,
+    0.825
+  );
+
+  basin.add(aerator);
+
+  // ---------------------------------------------------
+  // AUTOMATIC SENSOR
+  // ---------------------------------------------------
+
+  const sensor =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        0.065,
+        0.045,
+        0.025
+      ),
+      sensorMaterial
+    );
+
+  sensor.position.set(
+    0,
+    1.54,
+    0.116
+  );
+
+  basin.add(sensor);
+
+  // Маленький индикатор сенсора.
+  const sensorLight =
+    new THREE.Mesh(
+      new THREE.CircleGeometry(
+        0.009,
+        12
+      ),
+      new THREE.MeshBasicMaterial({
+        color: 0x88b7d8
+      })
+    );
+
+  sensorLight.position.set(
+    0,
+    1.54,
+    0.101
+  );
+
+  basin.add(sensorLight);
+
+  // ---------------------------------------------------
+  // PIPE UNDER BASIN
+  // ---------------------------------------------------
+
+  const pipe =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.065,
+        0.065,
+        0.55,
+        20
+      ),
+      metalMaterial
+    );
+
+  pipe.position.set(
+    0,
+    0.78,
+    0.68
+  );
+
+  basin.add(pipe);
+
+  // S-образное колено.
+  const pipeCurve =
+    new THREE.Mesh(
+      new THREE.TorusGeometry(
+        0.17,
+        0.052,
+        12,
+        30,
+        Math.PI
+      ),
+      metalMaterial
+    );
+
+  pipeCurve.rotation.z =
+    Math.PI / 2;
+
+  pipeCurve.position.set(
+    0,
+    0.51,
+    0.53
+  );
+
+  basin.add(pipeCurve);
+
+  const wallPipe =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.058,
+        0.058,
+        0.3,
+        18
+      ),
+      metalMaterial
+    );
+
+  wallPipe.rotation.x =
+    Math.PI / 2;
+
+  wallPipe.position.set(
+    0,
+    0.51,
+    0.28
+  );
+
+  basin.add(wallPipe);
+
+  parent.add(basin);
+}
+
+// =====================================================
+// PANORAMIC MIRROR
+// =====================================================
+
+function createPanoramicMirror({
+  parent,
+  width,
+  height,
+  y
+}) {
+  const mirrorGroup =
+    new THREE.Group();
+
+  const backing =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        width + 0.18,
+        height + 0.18,
+        0.1
+      ),
+      mirrorBackingMaterial
+    );
+
+  backing.position.set(
+    0,
+    y,
+    0.03
+  );
+
+  mirrorGroup.add(backing);
+
+  const glass =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        width,
+        height,
+        0.035
+      ),
+      mirrorMaterial
+    );
+
+  glass.position.set(
+    0,
+    y,
+    0.105
+  );
+
+  mirrorGroup.add(glass);
+
+  createMirrorFrame({
+    parent: mirrorGroup,
+    width: width + 0.18,
+    height: height + 0.18,
+    centerY: y,
+    z: 0.14,
+    thickness: 0.075
+  });
+
+  // Световой блик.
+  const reflectionStrip =
+    new THREE.Mesh(
+      new THREE.PlaneGeometry(
+        width * 0.1,
+        height * 0.9
+      ),
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.055,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      })
+    );
+
+  reflectionStrip.position.set(
+    -width * 0.3,
+    y,
+    0.128
+  );
+
+  reflectionStrip.rotation.z =
+    -0.14;
+
+  mirrorGroup.add(
+    reflectionStrip
+  );
+
+  parent.add(mirrorGroup);
+}
+
+// =====================================================
+// FULL-LENGTH MIRROR
+// =====================================================
+
+function createFullLengthMirror({
+  parent,
+  x,
+  y,
+  z,
+  rotationY
+}) {
+  const mirrorGroup =
+    new THREE.Group();
+
+  mirrorGroup.position.set(
+    x,
+    y,
+    z
+  );
+
+  mirrorGroup.rotation.y =
+    rotationY;
+
+  const width = 2.8;
+  const height = 5.35;
+
+  const backing =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        width + 0.18,
+        height + 0.18,
+        0.11
+      ),
+      mirrorBackingMaterial
+    );
+
+  mirrorGroup.add(backing);
+
+  const glass =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        width,
+        height,
+        0.035
+      ),
+      mirrorMaterial
+    );
+
+  glass.position.z = 0.075;
+
+  mirrorGroup.add(glass);
+
+  createMirrorFrame({
+    parent: mirrorGroup,
+    width: width + 0.18,
+    height: height + 0.18,
+    centerY: 0,
+    z: 0.11,
+    thickness: 0.085
+  });
+
+  const reflectionStrip =
+    new THREE.Mesh(
+      new THREE.PlaneGeometry(
+        0.42,
+        height * 0.9
+      ),
+      new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.06,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      })
+    );
+
+  reflectionStrip.position.set(
+    -0.65,
+    0,
+    0.1
+  );
+
+  reflectionStrip.rotation.z =
+    -0.1;
+
+  mirrorGroup.add(
+    reflectionStrip
+  );
+
+  const mirrorLight =
+    new THREE.PointLight(
+      0xffefd6,
+      0.4,
+      6,
+      2
+    );
+
+  mirrorLight.position.set(
+    0,
+    2.8,
+    1.2
+  );
+
+  mirrorGroup.add(
+    mirrorLight
+  );
+
+  parent.add(mirrorGroup);
+}
+
+// =====================================================
+// MIRROR FRAME
+// =====================================================
+
+function createMirrorFrame({
+  parent,
+  width,
+  height,
+  centerY,
+  z,
+  thickness
+}) {
+  const top =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        width,
+        thickness,
+        thickness
+      ),
+      darkMetalMaterial
+    );
+
+  top.position.set(
+    0,
+    centerY + height / 2,
+    z
+  );
+
+  parent.add(top);
+
+  const bottom =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        width,
+        thickness,
+        thickness
+      ),
+      darkMetalMaterial
+    );
+
+  bottom.position.set(
+    0,
+    centerY - height / 2,
+    z
+  );
+
+  parent.add(bottom);
+
+  const left =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        thickness,
+        height,
+        thickness
+      ),
+      darkMetalMaterial
+    );
+
+  left.position.set(
+    -width / 2,
+    centerY,
+    z
+  );
+
+  parent.add(left);
+
+  const right =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        thickness,
+        height,
+        thickness
+      ),
+      darkMetalMaterial
+    );
+
+  right.position.set(
+    width / 2,
+    centerY,
+    z
+  );
+
+  parent.add(right);
 }
 
 // =====================================================
@@ -404,61 +1316,165 @@ function createCabin({
   const door =
     new THREE.Mesh(
       new THREE.BoxGeometry(
-        width - 0.35,
-        4.8,
-        0.16
+        width - 0.34,
+        4.85,
+        0.15
       ),
       darkMaterial
     );
 
   door.position.set(
     0,
-    2.65,
+    2.67,
     depth / 2
   );
 
   cabin.add(door);
 
+  const handle =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.055,
+        0.055,
+        0.35,
+        16
+      ),
+      metalMaterial
+    );
+
+  handle.rotation.x =
+    Math.PI / 2;
+
+  handle.position.set(
+    width * 0.32,
+    2.7,
+    depth / 2 + 0.13
+  );
+
+  cabin.add(handle);
+
   const toiletBase =
     new THREE.Mesh(
       new THREE.CylinderGeometry(
-        0.55,
+        0.54,
+        0.68,
         0.7,
-        0.75,
-        24
+        32
       ),
       ceramicMaterial
     );
 
   toiletBase.position.set(
     0,
-    0.38,
+    0.35,
     -0.8
   );
 
   cabin.add(toiletBase);
 
+  const bowl =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.65,
+        0.53,
+        0.32,
+        32
+      ),
+      ceramicMaterial
+    );
+
+  bowl.scale.z = 1.22;
+
+  bowl.position.set(
+    0,
+    0.72,
+    -0.73
+  );
+
+  cabin.add(bowl);
+
+  const bowlInside =
+    new THREE.Mesh(
+      new THREE.CircleGeometry(
+        0.47,
+        32
+      ),
+      ceramicInsideMaterial
+    );
+
+  bowlInside.scale.y = 1.15;
+
+  bowlInside.rotation.x =
+    -Math.PI / 2;
+
+  bowlInside.position.set(
+    0,
+    0.9,
+    -0.73
+  );
+
+  cabin.add(bowlInside);
+
   const toiletSeat =
     new THREE.Mesh(
       new THREE.TorusGeometry(
         0.52,
-        0.11,
-        12,
-        28
+        0.095,
+        14,
+        36
       ),
       ceramicMaterial
     );
+
+  toiletSeat.scale.y = 1.18;
 
   toiletSeat.rotation.x =
     Math.PI / 2;
 
   toiletSeat.position.set(
     0,
-    0.83,
-    -0.8
+    0.94,
+    -0.73
   );
 
   cabin.add(toiletSeat);
+
+  const flushTank =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        1.25,
+        1,
+        0.38
+      ),
+      ceramicMaterial
+    );
+
+  flushTank.position.set(
+    0,
+    1.25,
+    -1.58
+  );
+
+  cabin.add(flushTank);
+
+  const flushButton =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.09,
+        0.09,
+        0.035,
+        20
+      ),
+      metalMaterial
+    );
+
+  flushButton.position.set(
+    0,
+    1.77,
+    -1.58
+  );
+
+  cabin.add(flushButton);
 
   cabin.position.set(
     x,
@@ -474,37 +1490,70 @@ function createCabin({
 // =====================================================
 
 function createLights(parent) {
-  const mainLight =
+  const hemisphereLight =
+    new THREE.HemisphereLight(
+      0xf2f5fa,
+      0x27292d,
+      0.72
+    );
+
+  parent.add(
+    hemisphereLight
+  );
+
+  const entranceLight =
     new THREE.PointLight(
-      0xf0f1ed,
-      1.4,
-      30,
+      0xfff1d9,
+      1.15,
+      25,
       2
     );
 
-  mainLight.position.set(
+  entranceLight.position.set(
     0,
-    6.5,
-    0
+    6.2,
+    3
   );
 
-  parent.add(mainLight);
+  parent.add(
+    entranceLight
+  );
+
+  const middleLight =
+    new THREE.PointLight(
+      0xf2f4f7,
+      1,
+      24,
+      2
+    );
+
+  middleLight.position.set(
+    2,
+    6.4,
+    -4
+  );
+
+  parent.add(
+    middleLight
+  );
 
   const backLight =
     new THREE.PointLight(
-      0xdce5f3,
-      0.85,
+      0xe2eaf5,
+      0.95,
       20,
       2
     );
 
   backLight.position.set(
     0,
-    5,
+    5.6,
     -12
   );
 
-  parent.add(backLight);
+  parent.add(
+    backLight
+  );
 }
 
 // =====================================================
@@ -548,8 +1597,7 @@ function createTextSign(
       })
     );
 
-  plane.position.z =
-    0.046;
+  plane.position.z = 0.046;
 
   sign.add(plane);
 
@@ -558,7 +1606,9 @@ function createTextSign(
 
 function createTextTexture(text) {
   const canvas =
-    document.createElement("canvas");
+    document.createElement(
+      "canvas"
+    );
 
   canvas.width = 1024;
   canvas.height = 180;

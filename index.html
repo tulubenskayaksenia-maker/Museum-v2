@@ -8,7 +8,12 @@
     content="width=device-width, initial-scale=1.0"
   />
 
-  <title>Museum-v2</title>
+  <meta
+    name="description"
+    content="Interactive virtual museum"
+  />
+
+  <title>Museum</title>
 
   <link
     rel="stylesheet"
@@ -18,12 +23,181 @@
 
 <body>
 
-  <!-- =====================================
-       TICKET MENU
-  ====================================== -->
+  <!-- ===============================================
+       START / ONBOARDING
+  ================================================ -->
 
-  <div id="ticket-menu">
-    <div class="ticket-window">
+  <div id="museum-onboarding">
+
+    <div class="museum-onboarding-window">
+
+      <div class="museum-onboarding-label">
+        INTERACTIVE MUSEUM
+      </div>
+
+      <h1>
+        Welcome
+      </h1>
+
+      <p>
+        Explore the museum, enter rooms
+        and interact with artworks.
+      </p>
+
+      <button
+        id="museum-enter-button"
+        type="button"
+      >
+        ENTER MUSEUM
+      </button>
+
+      <button
+        id="museum-open-instructions"
+        type="button"
+      >
+        HOW TO MOVE
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- ===============================================
+       CONTROL INSTRUCTIONS
+  ================================================ -->
+
+  <div id="museum-instructions">
+
+    <div class="museum-instructions-window">
+
+      <button
+        id="museum-instructions-close"
+        type="button"
+        aria-label="Close instructions"
+      >
+        ×
+      </button>
+
+      <div class="museum-onboarding-label">
+        CONTROLS
+      </div>
+
+      <h2>
+        How to explore
+      </h2>
+
+      <div class="museum-controls-list">
+
+        <div class="museum-control-row">
+          <span class="museum-control-key">
+            MOVE MOUSE
+          </span>
+
+          <span>
+            Look around
+          </span>
+        </div>
+
+        <div class="museum-control-row">
+          <span class="museum-control-key">
+            LEFT CLICK
+          </span>
+
+          <span>
+            Walk forward or interact
+          </span>
+        </div>
+
+        <div class="museum-control-row">
+          <span class="museum-control-key">
+            RIGHT CLICK
+          </span>
+
+          <span>
+            Go back
+          </span>
+        </div>
+
+        <div class="museum-control-row">
+          <span class="museum-control-key">
+            BACKSPACE
+          </span>
+
+          <span>
+            Return to the previous room
+          </span>
+        </div>
+
+        <div class="museum-control-row">
+          <span class="museum-control-key">
+            SCROLL
+          </span>
+
+          <span>
+            Zoom in and out
+          </span>
+        </div>
+
+        <div class="museum-control-row museum-mobile-control">
+          <span class="museum-control-key">
+            SWIPE
+          </span>
+
+          <span>
+            Look around on mobile
+          </span>
+        </div>
+
+        <div class="museum-control-row museum-mobile-control">
+          <span class="museum-control-key">
+            TAP
+          </span>
+
+          <span>
+            Move or interact on mobile
+          </span>
+        </div>
+
+      </div>
+
+      <button
+        id="museum-instructions-start"
+        type="button"
+      >
+        START EXPLORING
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- ===============================================
+       PERMANENT HELP BUTTON
+  ================================================ -->
+
+  <button
+    id="museum-help-button"
+    type="button"
+    aria-label="Open controls"
+  >
+    ?
+  </button>
+
+  <!-- ===============================================
+       TICKET MENU
+  ================================================ -->
+
+  <div
+    id="ticket-menu"
+    aria-hidden="true"
+  >
+
+    <div
+      class="ticket-window"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ticket-menu-title"
+    >
 
       <button
         id="ticket-menu-close"
@@ -37,7 +211,7 @@
         MUSEUM ADMISSION
       </div>
 
-      <h2>
+      <h2 id="ticket-menu-title">
         Ticket to the Exhibition
       </h2>
 
@@ -47,6 +221,7 @@
       </p>
 
       <div class="ticket-information">
+
         <div>
           <span>TYPE</span>
           <strong>GENERAL ADMISSION</strong>
@@ -61,6 +236,7 @@
           <span>PRICE</span>
           <strong>FREE</strong>
         </div>
+
       </div>
 
       <button
@@ -71,43 +247,12 @@
       </button>
 
     </div>
-  </div>
-
-  <!-- =====================================
-       CINEMA FULLSCREEN VIEWER
-  ====================================== -->
-
-  <div id="cinema-viewer">
-
-    <div class="cinema-viewer-screen">
-
-      <button
-        id="cinema-viewer-close"
-        type="button"
-        aria-label="Close cinema screen"
-      >
-        ×
-      </button>
-
-      <div class="cinema-placeholder">
-
-        <span class="cinema-placeholder-label">
-          CINEMA
-        </span>
-
-        <span class="cinema-placeholder-title">
-          FILM SCREEN
-        </span>
-
-        <span class="cinema-placeholder-note">
-          Video will be added here
-        </span>
-
-      </div>
-
-    </div>
 
   </div>
+
+  <!-- ===============================================
+       THREE.JS
+  ================================================ -->
 
   <script
     type="module"

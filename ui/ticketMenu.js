@@ -2,6 +2,19 @@ let menuElement = null;
 let ticketButton = null;
 let menuOpen = false;
 
+/*
+  Билет хранится только в памяти страницы.
+
+  После обновления сайта состояние сбрасывается,
+  поэтому посетителю снова нужно получить билет.
+*/
+
+let ticketReserved = false;
+
+// =====================================================
+// SETUP
+// =====================================================
+
 export function setupTicketMenu() {
   menuElement =
     document.querySelector(
@@ -29,7 +42,9 @@ export function setupTicketMenu() {
   closeButton?.addEventListener(
     "click",
     (event) => {
+      event.preventDefault();
       event.stopPropagation();
+
       closeTicketMenu();
     }
   );
@@ -37,7 +52,9 @@ export function setupTicketMenu() {
   ticketButton?.addEventListener(
     "click",
     (event) => {
+      event.preventDefault();
       event.stopPropagation();
+
       reserveTicket();
     }
   );
@@ -78,7 +95,13 @@ export function setupTicketMenu() {
       }
     }
   );
+
+  updateTicketButton();
 }
+
+// =====================================================
+// OPEN / CLOSE
+// =====================================================
 
 export function openTicketMenu() {
   if (!menuElement) {
@@ -86,6 +109,8 @@ export function openTicketMenu() {
   }
 
   menuOpen = true;
+
+  updateTicketButton();
 
   menuElement.classList.add(
     "visible"
@@ -111,26 +136,79 @@ export function isTicketMenuOpen() {
   return menuOpen;
 }
 
+// =====================================================
+// TICKET STATE
+// =====================================================
+
+export function hasTicket() {
+  return ticketReserved;
+}
+
+export function clearTicket() {
+  ticketReserved = false;
+
+  updateTicketButton();
+
+  window.dispatchEvent(
+    new CustomEvent(
+      "museum-ticket-cleared"
+    )
+  );
+}
+
+// =====================================================
+// FREE TICKET
+// =====================================================
+
 function reserveTicket() {
   if (!ticketButton) {
     return;
   }
 
-  ticketButton.textContent =
-    "TICKET RESERVED";
+  if (hasTicket()) {
+    closeTicketMenu();
+    return;
+  }
 
-  ticketButton.classList.add(
-    "reserved"
+  ticketReserved = true;
+
+  updateTicketButton();
+
+  window.dispatchEvent(
+    new CustomEvent(
+      "museum-ticket-reserved"
+    )
   );
 
   window.setTimeout(() => {
     closeTicketMenu();
+  }, 650);
+}
 
+// =====================================================
+// BUTTON
+// =====================================================
+
+function updateTicketButton() {
+  if (!ticketButton) {
+    return;
+  }
+
+  if (hasTicket()) {
     ticketButton.textContent =
-      "GET TICKET";
+      "TICKET RECEIVED";
 
-    ticketButton.classList.remove(
+    ticketButton.classList.add(
       "reserved"
     );
-  }, 1000);
+
+    return;
+  }
+
+  ticketButton.textContent =
+    "GET FREE TICKET";
+
+  ticketButton.classList.remove(
+    "reserved"
+  );
 }
