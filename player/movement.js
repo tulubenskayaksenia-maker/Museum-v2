@@ -1845,8 +1845,26 @@ function returnToPreviousSpace() {
 
   hideAllRooms();
 
-  previousRoom.visible =
-    true;
+  /*
+    Холл и коридор — одно непрерывное пространство.
+    После возвращения из гардероба, туалета или боковой комнаты
+    нужно снова показывать обе его части.
+  */
+
+  if (
+    previousState.roomName === "entrance" ||
+    previousState.roomName === "corridor"
+  ) {
+    if (rooms.entrance) {
+      rooms.entrance.visible = true;
+    }
+
+    if (rooms.corridor) {
+      rooms.corridor.visible = true;
+    }
+  } else {
+    previousRoom.visible = true;
+  }
 
   currentRoom =
     previousState.roomName;
