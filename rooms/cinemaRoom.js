@@ -975,7 +975,7 @@ function setupScreenInteraction({
 
       if (
         event.target.closest?.(
-          "#cinema-viewer"
+          "#cinema-viewer, button, a, input, textarea, select"
         )
       ) {
         return;

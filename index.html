@@ -19,6 +19,11 @@
     rel="stylesheet"
     href="./style.css"
   />
+
+  <link
+    rel="stylesheet"
+    href="./ui/cinemaViewer.css"
+  />
 </head>
 
 <body>
@@ -62,6 +67,7 @@
 
   </div>
 
+
   <!-- ===============================================
        CONTROL INSTRUCTIONS
   ================================================ -->
@@ -89,6 +95,7 @@
       <div class="museum-controls-list">
 
         <div class="museum-control-row">
+
           <span class="museum-control-key">
             MOVE MOUSE
           </span>
@@ -96,9 +103,12 @@
           <span>
             Look around
           </span>
+
         </div>
 
+
         <div class="museum-control-row">
+
           <span class="museum-control-key">
             LEFT CLICK
           </span>
@@ -106,9 +116,12 @@
           <span>
             Walk forward or interact
           </span>
+
         </div>
 
+
         <div class="museum-control-row">
+
           <span class="museum-control-key">
             RIGHT CLICK
           </span>
@@ -116,9 +129,12 @@
           <span>
             Go back
           </span>
+
         </div>
 
+
         <div class="museum-control-row">
+
           <span class="museum-control-key">
             BACKSPACE
           </span>
@@ -126,9 +142,12 @@
           <span>
             Return to the previous room
           </span>
+
         </div>
 
+
         <div class="museum-control-row">
+
           <span class="museum-control-key">
             SCROLL
           </span>
@@ -136,9 +155,12 @@
           <span>
             Zoom in and out
           </span>
+
         </div>
 
+
         <div class="museum-control-row museum-mobile-control">
+
           <span class="museum-control-key">
             SWIPE
           </span>
@@ -146,9 +168,12 @@
           <span>
             Look around on mobile
           </span>
+
         </div>
 
+
         <div class="museum-control-row museum-mobile-control">
+
           <span class="museum-control-key">
             TAP
           </span>
@@ -156,9 +181,11 @@
           <span>
             Move or interact on mobile
           </span>
+
         </div>
 
       </div>
+
 
       <button
         id="museum-instructions-start"
@@ -171,8 +198,9 @@
 
   </div>
 
+
   <!-- ===============================================
-       PERMANENT HELP BUTTON
+       HELP BUTTON
   ================================================ -->
 
   <button
@@ -182,6 +210,7 @@
   >
     ?
   </button>
+
 
   <!-- ===============================================
        TICKET MENU
@@ -207,48 +236,153 @@
         ×
       </button>
 
-      <div class="ticket-label">
-        MUSEUM ADMISSION
+
+      <div class="ticket-layout">
+
+        <!-- =========================================
+             FREE MUSEUM TICKET
+        ========================================== -->
+
+        <section class="ticket-admission-section">
+
+          <div class="ticket-label">
+            MUSEUM ADMISSION
+          </div>
+
+          <h2 id="ticket-menu-title">
+            Ticket to the Exhibition
+          </h2>
+
+          <p class="ticket-description">
+            Admission grants access to all current
+            exhibitions and gallery spaces.
+          </p>
+
+
+          <div class="ticket-information">
+
+            <div>
+
+              <span>
+                TYPE
+              </span>
+
+              <strong>
+                GENERAL ADMISSION
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                ACCESS
+              </span>
+
+              <strong>
+                ALL EXHIBITIONS
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                PRICE
+              </span>
+
+              <strong>
+                FREE
+              </strong>
+
+            </div>
+
+          </div>
+
+
+          <button
+            id="ticket-menu-button"
+            type="button"
+          >
+            GET TICKET
+          </button>
+
+        </section>
+
+
+        <!-- =========================================
+             OPTIONAL DONATION
+        ========================================== -->
+
+        <section class="ticket-donation-section">
+
+          <div class="ticket-label">
+            OPTIONAL SUPPORT
+          </div>
+
+          <h3 class="ticket-donation-title">
+            Support the Museum
+          </h3>
+
+          <p class="ticket-donation-description">
+            Admission is free. You can support future
+            exhibitions and the development of this
+            independent digital museum.
+          </p>
+
+
+          <a
+            class="ticket-donation-qr-link"
+            href="https://paypal.me/KseniaTulubenskaya"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open PayPal donation page"
+          >
+
+            <img
+              class="ticket-donation-qr"
+              src="./IMG_8960.JPG"
+              alt="PayPal QR code for Ksenia Tulubenskaya"
+            />
+
+          </a>
+
+
+          <a
+            class="ticket-donation-paypal-link"
+            href="https://paypal.me/KseniaTulubenskaya"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            paypal.me/KseniaTulubenskaya
+          </a>
+
+
+          <a
+            class="ticket-donation-button"
+            href="https://paypal.me/KseniaTulubenskaya"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            SUPPORT THE MUSEUM
+          </a>
+
+
+          <p class="ticket-donation-note">
+            Donation is optional and is not required
+            to enter the museum.
+          </p>
+
+        </section>
+
       </div>
-
-      <h2 id="ticket-menu-title">
-        Ticket to the Exhibition
-      </h2>
-
-      <p class="ticket-description">
-        Admission grants access to all current
-        exhibitions and gallery spaces.
-      </p>
-
-      <div class="ticket-information">
-
-        <div>
-          <span>TYPE</span>
-          <strong>GENERAL ADMISSION</strong>
-        </div>
-
-        <div>
-          <span>ACCESS</span>
-          <strong>ALL EXHIBITIONS</strong>
-        </div>
-
-        <div>
-          <span>PRICE</span>
-          <strong>FREE</strong>
-        </div>
-
-      </div>
-
-      <button
-        id="ticket-menu-button"
-        type="button"
-      >
-        GET TICKET
-      </button>
 
     </div>
 
   </div>
+
 
   <!-- ===============================================
        THREE.JS

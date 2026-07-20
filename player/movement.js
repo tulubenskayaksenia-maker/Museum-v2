@@ -16,6 +16,11 @@ import {
   isArtworkOpen
 } from "../objects/artwork.js";
 
+import {
+  isMainGateOpen,
+  requestMainGateOpening
+} from "../objects/door.js";
+
 // =====================================================
 // RAYCASTER
 // =====================================================
@@ -102,6 +107,13 @@ let ignoreNextClick = false;
 
 let ticketNoticeTimeout = null;
 
+/*
+  Не даём предупреждению мигать при каждом клике.
+  Оно снова станет доступно только после того,
+  как посетитель отойдёт от двери.
+*/
+let ticketNoticeShownForApproach = false;
+
 // =====================================================
 // PINCH ZOOM
 // =====================================================
@@ -129,7 +141,7 @@ const ROOM_EYE_HEIGHTS = {
   leftRoom: 1.98,
   rightRoom: 1.98,
 
-  corridor: 1.98,
+  corridor: 6.73,
 
   room01: 2.0,
   room02: 2.02,
@@ -144,6 +156,30 @@ const ROOM_EYE_HEIGHTS = {
 
 const EXIT_THRESHOLD =
   0.35;
+
+/*
+  Physical bounds of the back wall.
+  The wall is centred at z = -24.8 and is 1.2 units thick.
+  Separate enter/exit thresholds prevent rapid room-state flicker.
+*/
+const ENTRANCE_TO_CORRIDOR_Z =
+  -25.45;
+
+const CORRIDOR_TO_ENTRANCE_Z =
+  -24.15;
+
+const CLOSED_GATE_STOP_Z =
+  -23.75;
+
+/*
+  Без билета посетитель останавливается
+  примерно на середине лестницы.
+
+  Лестница идёт от z = -6 до z = -21,
+  её середина находится около z = -13.5.
+*/
+const TICKET_NOTICE_STOP_Z =
+  -13.5;
 
 /*
   Desktop look.
@@ -213,7 +249,7 @@ const MAX_FOV =
 const ROOM_LIMITS = {
   entrance: {
     startZ: 18,
-    endZ: -23,
+    endZ: -31,
 
     minX: -9.8,
     maxX: 9.8,
@@ -257,8 +293,14 @@ const ROOM_LIMITS = {
   },
 
   corridor: {
-    startZ: 12,
-    endZ: -155,
+    /*
+      Глобальные координаты непрерывного коридора.
+
+      Вход находится сразу за задней стеной холла,
+      поэтому при переходе камера не переносится.
+    */
+    startZ: -23.4,
+    endZ: -195.6,
 
     minX: -5.4,
     maxX: 5.4
@@ -1026,6 +1068,15 @@ function handleKeyDown(event) {
     );
 
     walkTowardPointer();
+
+    return;
+  }
+
+  if (
+    event.key === "ArrowDown" ||
+    event.key.toLowerCase() === "s"
+  ) {
+    walkBackward();
   }
 }
 
@@ -1233,7 +1284,7 @@ function getTicketRequiredNotice() {
     </span>
 
     <span>
-      GET YOUR FREE TICKET FIRST
+      PLEASE GET A TICKET FIRST
     </span>
   `;
 
@@ -1386,10 +1437,54 @@ function walkTowardPointer() {
       limits.maxX
     );
 
+  let effectiveEndZ =
+    limits.endZ;
+
+  if (
+    currentRoom === "entrance" &&
+    !isMainGateOpen()
+  ) {
+    if (!hasTicket()) {
+      /*
+        Без билета останавливаем посетителя
+        примерно на середине лестницы.
+      */
+      effectiveEndZ =
+        TICKET_NOTICE_STOP_Z;
+
+      const reachedTicketNotice =
+        movementDirection.z < 0 &&
+        nextZ <= TICKET_NOTICE_STOP_Z;
+
+      if (
+        reachedTicketNotice &&
+        !ticketNoticeShownForApproach
+      ) {
+        showTicketRequiredNotice();
+        ticketNoticeShownForApproach = true;
+      }
+    } else {
+      /*
+        С билетом посетитель проходит дальше по лестнице.
+        Дверь открывается только при подходе к самой арке.
+      */
+      effectiveEndZ =
+        CLOSED_GATE_STOP_Z;
+
+      const reachedClosedGate =
+        movementDirection.z < 0 &&
+        nextZ <= CLOSED_GATE_STOP_Z;
+
+      if (reachedClosedGate) {
+        requestMainGateOpening();
+      }
+    }
+  }
+
   nextZ =
     THREE.MathUtils.clamp(
       nextZ,
-      limits.endZ,
+      effectiveEndZ,
       limits.startZ
     );
 
@@ -1553,6 +1648,82 @@ function getEyeHeightForCurrentRoom(
     progress *
       limits.landingHeight
   );
+}
+
+// =====================================================
+// CONTINUOUS ENTRANCE ↔ CORRIDOR
+// =====================================================
+
+function updateContinuousEntranceCorridor() {
+  /*
+    Переключаем только активные границы движения.
+
+    Камера, её поворот и текущая позиция
+    вообще не меняются.
+  */
+
+  /*
+    После отхода от входа предупреждение можно
+    показать снова при следующем отдельном подходе.
+  */
+  if (
+    currentRoom === "entrance" &&
+    camera.position.z > -8.5
+  ) {
+    ticketNoticeShownForApproach = false;
+  }
+
+  if (hasTicket()) {
+    ticketNoticeShownForApproach = false;
+
+    document
+      .getElementById(
+        "museum-ticket-notice"
+      )
+      ?.classList.remove(
+        "visible"
+      );
+  }
+
+  if (
+    currentRoom === "entrance" &&
+    hasTicket() &&
+    isMainGateOpen() &&
+    camera.position.z <
+      ENTRANCE_TO_CORRIDOR_Z
+  ) {
+    currentRoom = "corridor";
+
+    targetY =
+      getBaseEyeHeight(
+        "corridor"
+      );
+
+    updateMobileBackButton();
+
+    return;
+  }
+
+  if (
+    currentRoom === "corridor" &&
+    camera.position.z >
+      CORRIDOR_TO_ENTRANCE_Z
+  ) {
+    currentRoom = "entrance";
+
+    targetZ =
+      Math.max(
+        targetZ,
+        CORRIDOR_TO_ENTRANCE_Z
+      );
+
+    targetY =
+      getEyeHeightForCurrentRoom(
+        targetZ
+      );
+
+    updateMobileBackButton();
+  }
 }
 
 // =====================================================
@@ -2040,8 +2211,8 @@ function setupInteractionStyles() {
 
     #museum-ticket-notice {
       position: fixed;
-      left: 34px;
-      bottom: 42px;
+      left: 50%;
+      top: 50%;
       z-index: 9500;
 
       display: flex;
@@ -2074,7 +2245,8 @@ function setupInteractionStyles() {
       pointer-events: none;
 
       transform:
-        translateX(-14px);
+        translate(-50%, -50%)
+        scale(0.96);
 
       transition:
         opacity 0.25s ease,
@@ -2093,7 +2265,8 @@ function setupInteractionStyles() {
       visibility: visible;
 
       transform:
-        translateX(0);
+        translate(-50%, -50%)
+        scale(1);
     }
 
     .museum-ticket-notice-arrow {
@@ -2136,9 +2309,10 @@ function setupInteractionStyles() {
       }
 
       #museum-ticket-notice {
-        left: 18px;
-        right: 18px;
-        bottom: 24px;
+        left: 50%;
+        right: auto;
+        top: 50%;
+        bottom: auto;
         justify-content: center;
       }
     }
@@ -2229,6 +2403,8 @@ export function updateMovement() {
       camera.position.z
     ) *
     WALK_SMOOTHNESS;
+
+  updateContinuousEntranceCorridor();
 
   /*
     На телефоне камера следует

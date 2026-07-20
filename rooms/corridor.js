@@ -1,30 +1,71 @@
-import { THREE, scene } from "../core/scene.js";
+import {
+  THREE,
+  scene
+} from "../core/scene.js";
+
 import {
   floorMaterial,
   wallMaterial
 } from "../core/materials.js";
+
 import {
   createArchPortal
 } from "../objects/arch.js";
 
+import {
+  LEVELS,
+  ROOM
+} from "../config/layout.js";
+
+import {
+  getLandingLevel
+} from "../objects/stairs.js";
+
+// =====================================================
+// CONTINUOUS CORRIDOR
+// =====================================================
+
 export function createCorridor() {
-  const corridor = new THREE.Group();
+  const corridor =
+    new THREE.Group();
 
-  corridor.name = "Infinite Corridor";
-  corridor.visible = false;
+  corridor.name =
+    "Infinite Corridor";
 
-  // ==========================================
-  // FLOOR
-  // ==========================================
+  /*
+    Коридор находится в общей сцене постоянно,
+    но его передний край начинается только
+    ЗА задней стеной холла.
 
-  const floor = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      16,
-      0.14,
-      180
-    ),
-    floorMaterial
+    Поэтому боковые стены больше не торчат
+    внутрь входного пространства.
+  */
+
+  corridor.visible = true;
+
+  corridor.position.set(
+    0,
+    getLandingLevel(),
+    ROOM.backWallZ - 15.8
   );
+
+  const corridorWallHeight =
+    LEVELS.wallHeight -
+    getLandingLevel();
+
+  // ===================================================
+  // FLOOR
+  // ===================================================
+
+  const floor =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        16,
+        0.14,
+        180
+      ),
+      floorMaterial
+    );
 
   floor.position.set(
     0,
@@ -34,51 +75,53 @@ export function createCorridor() {
 
   corridor.add(floor);
 
-  // ==========================================
+  // ===================================================
   // LEFT WALL
-  // ==========================================
+  // ===================================================
 
-  const leftWall = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      1.2,
-      12,
-      180
-    ),
-    wallMaterial
-  );
+  const leftWall =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        1.2,
+        corridorWallHeight,
+        180
+      ),
+      wallMaterial
+    );
 
   leftWall.position.set(
     -8,
-    6,
+    corridorWallHeight / 2,
     -75
   );
 
   corridor.add(leftWall);
 
-  // ==========================================
+  // ===================================================
   // RIGHT WALL
-  // ==========================================
+  // ===================================================
 
-  const rightWall = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      1.2,
-      12,
-      180
-    ),
-    wallMaterial
-  );
+  const rightWall =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        1.2,
+        corridorWallHeight,
+        180
+      ),
+      wallMaterial
+    );
 
   rightWall.position.set(
     8,
-    6,
+    corridorWallHeight / 2,
     -75
   );
 
   corridor.add(rightWall);
 
-  // ==========================================
+  // ===================================================
   // ACTIVE DOORS
-  // ==========================================
+  // ===================================================
 
   const doors = [
     {
@@ -86,19 +129,16 @@ export function createCorridor() {
       z: -16,
       target: "room01"
     },
-
     {
       side: "right",
       z: -16,
       target: "room02"
     },
-
     {
       side: "left",
       z: -34,
       target: "room03"
     },
-
     {
       side: "right",
       z: -34,
@@ -106,14 +146,11 @@ export function createCorridor() {
     }
   ];
 
-  // ==========================================
-  // CREATE DOORS
-  // ==========================================
-
   doors.forEach((door) => {
-    const portal = createArchPortal({
-      target: door.target
-    });
+    const portal =
+      createArchPortal({
+        target: door.target
+      });
 
     if (door.side === "left") {
       portal.position.set(
@@ -138,9 +175,9 @@ export function createCorridor() {
     corridor.add(portal);
   });
 
-  // ==========================================
+  // ===================================================
   // SHADOWS
-  // ==========================================
+  // ===================================================
 
   corridor.traverse((child) => {
     if (child.isMesh) {

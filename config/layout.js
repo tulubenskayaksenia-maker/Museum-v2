@@ -1,7 +1,7 @@
 export const LEVELS = {
   floorY: 0,
-  wallHeight: 14,
-  ceilingY: 14
+  wallHeight: 16.65,
+  ceilingY: 16.65
 };
 
 export const ROOM = {

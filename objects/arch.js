@@ -10,12 +10,10 @@ import {
 } from "../config/layout.js";
 
 // =====================================================
-// БОКОВЫЕ АРКИ В ГЛАВНОМ ХОЛЛЕ
+// БОКОВАЯ АРКА В ХОЛЛЕ
 // =====================================================
 
 export function createSideArches(parent) {
-  // Левая боковая арка:
-  // ведёт в гардероб и WC
   const leftArch = createArchPortal({
     target: "leftRoom",
     showDarkOpening: true
@@ -34,263 +32,490 @@ export function createSideArches(parent) {
     Math.PI / 2;
 
   parent.add(leftArch);
-
-  // Правую боковую арку не создаём.
-  // На её месте стоит билетная касса.
 }
 
 // =====================================================
-// УНИВЕРСАЛЬНАЯ АРКА
+// ЕДИНАЯ ТОНКАЯ АРКА ДЛЯ ВСЕГО МУЗЕЯ
 //
-// Используется:
-// - левой аркой в холле;
-// - верхней аркой над лестницей;
-// - всеми арками в коридоре.
+// Форма:
+// - тонкая;
+// - с округлёнными рёбрами;
+// - слегка стрельчатая;
+// - вершина заострённая, но не острая;
+// - одинаковая для холла и галереи.
 // =====================================================
 
 export function createArchPortal({
-  width = 5.2,
-  height = 7.4,
-  depth = 1.3,
+  width = 4.75,
+  height = 7.45,
+  depth = 0.72,
 
-  openingWidth = 3.6,
-  openingHeight = 6.2,
+  openingWidth = 4.02,
+  openingHeight = 6.88,
 
   target = "",
   showDarkOpening = true
 } = {}) {
-  const arch =
+  const portal =
     new THREE.Group();
 
-  arch.name =
-    "Arch Portal";
+  portal.name =
+    "Soft Pointed Arch Portal";
 
-  // Только арка с target становится дверью
   if (target) {
-    arch.userData.type =
-      "door";
-
-    arch.userData.target =
-      target;
+    markAsDoor(
+      portal,
+      target
+    );
   }
 
-  const sideThickness =
-    (width - openingWidth) / 2;
+  const outerShoulderY =
+    height * 0.53;
 
-  const radius =
-    openingWidth / 2;
+  const innerShoulderY =
+    openingHeight * 0.54;
 
-  const straightHeight =
-    openingHeight - radius;
+  const outerTipRoundness =
+    0.18;
+
+  const innerTipRoundness =
+    0.15;
 
   // ===================================================
-  // ЧЁРНЫЙ ПРОЁМ
+  // ОСНОВНАЯ ГЛАДКАЯ АРКА
+  // ===================================================
+
+  const frameGeometry =
+    createArchFrameGeometry({
+      width,
+      height,
+      depth,
+
+      openingWidth,
+      openingHeight,
+
+      outerShoulderY,
+      innerShoulderY,
+
+      outerTipRoundness,
+      innerTipRoundness
+    });
+
+  const frame =
+    new THREE.Mesh(
+      frameGeometry,
+      archMaterial
+    );
+
+  frame.name =
+    "Rounded Thin Arch Frame";
+
+  frame.castShadow = true;
+  frame.receiveShadow = true;
+
+  if (target) {
+    markAsDoor(
+      frame,
+      target
+    );
+  }
+
+  portal.add(frame);
+
+  // ===================================================
+  // ТЁМНЫЙ ПРОЁМ
   // ===================================================
 
   if (showDarkOpening) {
     const opening =
-      createFilledArchShape(
-        openingWidth,
-        openingHeight,
-        darkMaterial
-      );
+      createFilledArchMesh({
+        width:
+          openingWidth,
+
+        height:
+          openingHeight,
+
+        shoulderY:
+          innerShoulderY,
+
+        tipRoundness:
+          innerTipRoundness,
+
+        material:
+          darkMaterial
+      });
 
     opening.name =
       "Dark Arch Opening";
 
-    /*
-      Ставим чёрную плоскость чуть впереди,
-      чтобы серая задняя стена её не перекрывала.
-    */
-
-    opening.position.set(
-      0,
-      0,
-      depth / 2 + 0.012
-    );
+    opening.position.z =
+      depth / 2 + 0.012;
 
     opening.renderOrder = 2;
 
-    arch.add(opening);
-  }
-
-  // ===================================================
-  // ЛЕВАЯ ВЕРТИКАЛЬНАЯ ЧАСТЬ
-  // ===================================================
-
-  const leftColumn =
-    new THREE.Mesh(
-      new THREE.BoxGeometry(
-        sideThickness,
-        straightHeight,
-        depth
-      ),
-      archMaterial
-    );
-
-  leftColumn.name =
-    "Left Arch Column";
-
-  leftColumn.position.set(
-    -openingWidth / 2 -
-      sideThickness / 2,
-
-    straightHeight / 2,
-    0
-  );
-
-  arch.add(leftColumn);
-
-  // ===================================================
-  // ПРАВАЯ ВЕРТИКАЛЬНАЯ ЧАСТЬ
-  // ===================================================
-
-  const rightColumn =
-    new THREE.Mesh(
-      new THREE.BoxGeometry(
-        sideThickness,
-        straightHeight,
-        depth
-      ),
-      archMaterial
-    );
-
-  rightColumn.name =
-    "Right Arch Column";
-
-  rightColumn.position.set(
-    openingWidth / 2 +
-      sideThickness / 2,
-
-    straightHeight / 2,
-    0
-  );
-
-  arch.add(rightColumn);
-
-  // ===================================================
-  // ПОЛУКРУГЛЫЙ ВЕРХ
-  // ===================================================
-
-  const blockCount = 32;
-
-  const archRadius =
-    radius + sideThickness / 2;
-
-  for (
-    let i = 0;
-    i <= blockCount;
-    i++
-  ) {
-    const progress =
-      i / blockCount;
-
-    const angle =
-      Math.PI -
-      progress * Math.PI;
-
-    const block =
-      new THREE.Mesh(
-        new THREE.BoxGeometry(
-          sideThickness * 0.96,
-          sideThickness * 0.96,
-          depth
-        ),
-        archMaterial
+    if (target) {
+      markAsDoor(
+        opening,
+        target
       );
-
-    block.name =
-      `Arch Block ${i}`;
-
-    block.position.set(
-      Math.cos(angle) *
-        archRadius,
-
-      straightHeight +
-        Math.sin(angle) *
-          archRadius,
-
-      0
-    );
-
-    block.rotation.z =
-      angle -
-      Math.PI / 2;
-
-    arch.add(block);
-  }
-
-  // ===================================================
-  // ТЕНИ
-  // ===================================================
-
-  arch.traverse((child) => {
-    if (!child.isMesh) {
-      return;
     }
 
-    child.castShadow = true;
-    child.receiveShadow = true;
-  });
+    portal.add(opening);
+  }
 
-  return arch;
+  // ===================================================
+  // НЕВИДИМАЯ ЗОНА КЛИКА
+  // ===================================================
+
+  if (target) {
+    const hitbox =
+      createFilledArchMesh({
+        width:
+          openingWidth + 0.34,
+
+        height:
+          openingHeight + 0.18,
+
+        shoulderY:
+          innerShoulderY + 0.05,
+
+        tipRoundness:
+          innerTipRoundness,
+
+        material:
+          new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            side: THREE.DoubleSide
+          })
+      });
+
+    hitbox.name =
+      "Arch Door Hitbox";
+
+    hitbox.position.z =
+      depth / 2 + 0.045;
+
+    hitbox.renderOrder = 10;
+
+    markAsDoor(
+      hitbox,
+      target
+    );
+
+    portal.add(hitbox);
+  }
+
+  return portal;
 }
 
 // =====================================================
-// ЗАПОЛНЕННАЯ АРОЧНАЯ ФОРМА
+// ОБЪЁМНАЯ РАМКА С ОТВЕРСТИЕМ
 // =====================================================
 
-function createFilledArchShape(
+function createArchFrameGeometry({
   width,
   height,
-  material
-) {
-  const radius =
-    width / 2;
+  depth,
 
-  const straightHeight =
-    height - radius;
+  openingWidth,
+  openingHeight,
+
+  outerShoulderY,
+  innerShoulderY,
+
+  outerTipRoundness,
+  innerTipRoundness
+}) {
+  const outerShape =
+    createArchShape({
+      width,
+      height,
+      shoulderY:
+        outerShoulderY,
+      tipRoundness:
+        outerTipRoundness
+    });
+
+  const innerHole =
+    createArchHole({
+      width:
+        openingWidth,
+      height:
+        openingHeight,
+      shoulderY:
+        innerShoulderY,
+      tipRoundness:
+        innerTipRoundness
+    });
+
+  outerShape.holes.push(
+    innerHole
+  );
+
+  const geometry =
+    new THREE.ExtrudeGeometry(
+      outerShape,
+      {
+        depth,
+        steps: 1,
+
+        // Более заметное скругление краёв.
+        bevelEnabled: true,
+        bevelThickness: 0.075,
+        bevelSize: 0.075,
+        bevelOffset: -0.012,
+        bevelSegments: 8,
+
+        curveSegments: 64
+      }
+    );
+
+  geometry.translate(
+    0,
+    0,
+    -depth / 2
+  );
+
+  geometry.computeVertexNormals();
+
+  return geometry;
+}
+
+// =====================================================
+// ВНЕШНИЙ СИЛУЭТ
+// =====================================================
+
+function createArchShape({
+  width,
+  height,
+  shoulderY,
+  tipRoundness
+}) {
+  const halfWidth =
+    width / 2;
 
   const shape =
     new THREE.Shape();
 
   shape.moveTo(
-    -width / 2,
+    -halfWidth,
     0
   );
 
   shape.lineTo(
-    -width / 2,
-    straightHeight
+    -halfWidth,
+    shoulderY
   );
 
-  // Верхний полукруг
-  shape.absarc(
-    0,
-    straightHeight,
-    radius,
-    Math.PI,
-    0,
-    true
+  addSoftPointedTop({
+    path: shape,
+    halfWidth,
+    height,
+    shoulderY,
+    tipRoundness,
+    reverse: false
+  });
+
+  shape.lineTo(
+    halfWidth,
+    0
   );
 
   shape.lineTo(
-    width / 2,
+    -halfWidth,
     0
   );
 
   shape.closePath();
 
+  return shape;
+}
+
+// =====================================================
+// ВНУТРЕННЕЕ ОТВЕРСТИЕ
+// =====================================================
+
+function createArchHole({
+  width,
+  height,
+  shoulderY,
+  tipRoundness
+}) {
+  const halfWidth =
+    width / 2;
+
+  const hole =
+    new THREE.Path();
+
+  hole.moveTo(
+    -halfWidth,
+    0
+  );
+
+  hole.lineTo(
+    halfWidth,
+    0
+  );
+
+  hole.lineTo(
+    halfWidth,
+    shoulderY
+  );
+
+  addSoftPointedTop({
+    path: hole,
+    halfWidth,
+    height,
+    shoulderY,
+    tipRoundness,
+    reverse: true
+  });
+
+  hole.lineTo(
+    -halfWidth,
+    0
+  );
+
+  hole.closePath();
+
+  return hole;
+}
+
+// =====================================================
+// МЯГКАЯ СТРЕЛЬЧАТАЯ ВЕРШИНА
+//
+// Вместо одного острого угла используется маленькая
+// округлая вершина. Поэтому форма выглядит изящно,
+// но не превращается в жёсткую готическую стрелу.
+// =====================================================
+
+function addSoftPointedTop({
+  path,
+  halfWidth,
+  height,
+  shoulderY,
+  tipRoundness,
+  reverse
+}) {
+  const tipX =
+    tipRoundness;
+
+  const tipY =
+    height - 0.045;
+
+  const controlHeight =
+    shoulderY +
+    (height - shoulderY) * 0.58;
+
+  if (!reverse) {
+    path.bezierCurveTo(
+      -halfWidth,
+      controlHeight,
+
+      -halfWidth * 0.47,
+      height - 0.34,
+
+      -tipX,
+      tipY
+    );
+
+    path.quadraticCurveTo(
+      0,
+      height + 0.055,
+
+      tipX,
+      tipY
+    );
+
+    path.bezierCurveTo(
+      halfWidth * 0.47,
+      height - 0.34,
+
+      halfWidth,
+      controlHeight,
+
+      halfWidth,
+      shoulderY
+    );
+
+    return;
+  }
+
+  path.bezierCurveTo(
+    halfWidth,
+    controlHeight,
+
+    halfWidth * 0.47,
+    height - 0.34,
+
+    tipX,
+    tipY
+  );
+
+  path.quadraticCurveTo(
+    0,
+    height + 0.055,
+
+    -tipX,
+    tipY
+  );
+
+  path.bezierCurveTo(
+    -halfWidth * 0.47,
+    height - 0.34,
+
+    -halfWidth,
+    controlHeight,
+
+    -halfWidth,
+    shoulderY
+  );
+}
+
+// =====================================================
+// ЗАПОЛНЕННАЯ АРОЧНАЯ ПЛОСКОСТЬ
+// =====================================================
+
+function createFilledArchMesh({
+  width,
+  height,
+  shoulderY,
+  tipRoundness,
+  material
+}) {
+  const shape =
+    createArchShape({
+      width,
+      height,
+      shoulderY,
+      tipRoundness
+    });
+
   const geometry =
     new THREE.ShapeGeometry(
-      shape
+      shape,
+      64
     );
 
-  const mesh =
-    new THREE.Mesh(
-      geometry,
-      material
-    );
+  return new THREE.Mesh(
+    geometry,
+    material
+  );
+}
 
-  return mesh;
+// =====================================================
+// НАВИГАЦИЯ
+// =====================================================
+
+function markAsDoor(
+  object,
+  target
+) {
+  object.userData.type =
+    "door";
+
+  object.userData.target =
+    target;
 }
