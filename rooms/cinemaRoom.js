@@ -5,7 +5,8 @@ import {
 } from "../core/scene.js";
 
 import {
-  openCinemaViewer
+  openCinemaViewer,
+  setCinemaFilm
 } from "../ui/cinemaViewer.js";
 
 // =====================================================
@@ -1012,6 +1013,22 @@ function setupScreenInteraction({
 
       event.preventDefault();
       event.stopImmediatePropagation();
+
+      setCinemaFilm({
+        title: "HIM",
+        artist: "Asaf Tal",
+        year: "2026",
+
+        warningTitle: "18+",
+
+        warningText:
+          `This film contains disturbing imagery and themes
+          that may not be suitable for all viewers.
+          Viewer discretion is advised.`,
+
+        videoUrl:
+          "./assets/videos/cinema-film.mp4"
+      });
 
       openCinemaViewer();
     },

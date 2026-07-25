@@ -216,7 +216,17 @@ function createWire(length) {
 // ПОДКЛЮЧЕНИЕ НАСТОЯЩЕЙ КАРТИНКИ
 // =====================================================
 
-function applyArtworkTexture(surface, imagePath) {
+function applyArtworkTexture(
+  surface,
+  imagePath,
+  {
+    artwork = null,
+    frame = null,
+    maxWidth = null,
+    maxHeight = null,
+    frameBorder = 0.18
+  } = {}
+) {
   const loader = new THREE.TextureLoader();
 
   loader.load(
@@ -227,6 +237,68 @@ function applyArtworkTexture(surface, imagePath) {
 
       texture.minFilter = THREE.LinearMipmapLinearFilter;
       texture.magFilter = THREE.LinearFilter;
+
+      /*
+        Никакого кадрирования и растягивания.
+        Геометрия картины и рамы меняется под реальный формат файла.
+      */
+      if (
+        artwork &&
+        frame &&
+        maxWidth &&
+        maxHeight &&
+        texture.image?.width &&
+        texture.image?.height
+      ) {
+        const imageAspect =
+          texture.image.width /
+          texture.image.height;
+
+        const maxSurfaceWidth = Math.max(
+          maxWidth - frameBorder,
+          0.1
+        );
+
+        const maxSurfaceHeight = Math.max(
+          maxHeight - frameBorder,
+          0.1
+        );
+
+        let surfaceWidth = maxSurfaceWidth;
+        let surfaceHeight =
+          surfaceWidth / imageAspect;
+
+        if (surfaceHeight > maxSurfaceHeight) {
+          surfaceHeight = maxSurfaceHeight;
+          surfaceWidth =
+            surfaceHeight * imageAspect;
+        }
+
+        const frameWidth =
+          surfaceWidth + frameBorder;
+
+        const frameHeight =
+          surfaceHeight + frameBorder;
+
+        surface.geometry.dispose();
+        surface.geometry =
+          new THREE.PlaneGeometry(
+            surfaceWidth,
+            surfaceHeight
+          );
+
+        frame.geometry.dispose();
+        frame.geometry =
+          new THREE.BoxGeometry(
+            frameWidth,
+            frameHeight,
+            0.16
+          );
+
+        artwork.userData.width = frameWidth;
+        artwork.userData.height = frameHeight;
+        artwork.userData.imageAspect = imageAspect;
+      }
 
       surface.material.map = texture;
       surface.material.color.set(0xffffff);
@@ -551,7 +623,14 @@ export function createWallArtwork({
   if (image) {
     applyArtworkTexture(
       surface,
-      image
+      image,
+      {
+        artwork,
+        frame,
+        maxWidth: width,
+        maxHeight: height,
+        frameBorder: 0.18
+      }
     );
   }
 

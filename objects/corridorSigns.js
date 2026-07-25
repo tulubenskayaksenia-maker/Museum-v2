@@ -49,7 +49,7 @@ export function createCorridorSigns(parent) {
   createBladeSign({
     parent: signsRoot,
 
-    label: "GALLERY I",
+    label: "GALLERY 1",
 
     side: "left",
 
@@ -59,7 +59,7 @@ export function createCorridorSigns(parent) {
   createBladeSign({
     parent: signsRoot,
 
-    label: "GALLERY II",
+    label: "GALLERY 2",
 
     side: "right",
 
@@ -69,7 +69,7 @@ export function createCorridorSigns(parent) {
   createBladeSign({
     parent: signsRoot,
 
-    label: "SCULPTURE",
+    label: "GALLERY 3",
 
     side: "left",
 
@@ -79,7 +79,7 @@ export function createCorridorSigns(parent) {
   createBladeSign({
     parent: signsRoot,
 
-    label: "CINEMA",
+    label: "GALLERY 4",
 
     side: "right",
 

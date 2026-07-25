@@ -7,14 +7,21 @@ let cinemaRoot = null;
 let cinemaVideo = null;
 
 let currentFilm = {
-  title: "UNTITLED FILM",
-  artist: "",
-  year: "",
-  description: "",
+  title: "HIM",
+  artist: "Asaf Tal",
+  year: "2026",
+
+  warningTitle: "18+",
+
+  warningText:
+    `This film contains disturbing imagery and themes
+    that may not be suitable for all viewers.
+    Viewer discretion is advised.`,
+
   videoUrl: ""
 };
 
-let currentScreen = "menu";
+let currentScreen = "warning";
 let cinemaIsOpen = false;
 
 // =====================================================
@@ -22,52 +29,83 @@ let cinemaIsOpen = false;
 // =====================================================
 
 export function setupCinemaViewer() {
-  if (document.getElementById("cinema-viewer")) {
-    cinemaRoot = document.getElementById("cinema-viewer");
-    cinemaVideo = document.getElementById("cinema-video");
+  const existingViewer =
+    document.getElementById(
+      "cinema-viewer"
+    );
+
+  if (existingViewer) {
+    cinemaRoot = existingViewer;
+
+    cinemaVideo =
+      document.getElementById(
+        "cinema-video"
+      );
+
+    updateFilm();
+
     return;
   }
 
-  cinemaRoot = document.createElement("div");
-  cinemaRoot.id = "cinema-viewer";
-  cinemaRoot.className = "cinema-viewer";
+  cinemaRoot =
+    document.createElement("div");
+
+  cinemaRoot.id =
+    "cinema-viewer";
+
+  cinemaRoot.className =
+    "cinema-viewer";
+
   cinemaRoot.hidden = true;
 
   cinemaRoot.innerHTML = `
-    <div class="cinema-viewer__backdrop"></div>
+    <div
+      class="cinema-viewer__backdrop"
+      data-cinema-close
+    ></div>
 
     <div class="cinema-viewer__panel">
 
-      <!-- MAIN MENU -->
+      <!-- ==========================================
+           CONTENT WARNING
+      =========================================== -->
+
       <section
-        id="cinema-screen-menu"
+        id="cinema-screen-warning"
         class="cinema-screen"
       >
         <button
-          id="cinema-close"
+          id="cinema-warning-close"
           class="cinema-close"
           type="button"
-          aria-label="Close cinema"
+          aria-label="Close content warning"
         >
           ×
         </button>
 
         <p class="cinema-eyebrow">
-          SCREENING ROOM
+          CONTENT WARNING
         </p>
 
-        <h1 class="cinema-title">
-          CINEMA
+        <h1
+          id="cinema-warning-title"
+          class="cinema-title"
+        >
+          18+
         </h1>
 
-        <p class="cinema-description">
-          Enter the screening room to watch the film.
-        </p>
+        <p
+          id="cinema-warning-text"
+          class="cinema-description"
+        ></p>
 
         <div class="cinema-actions">
           <button
             id="cinema-watch"
-            class="cinema-button cinema-button--main"
+            class="
+              cinema-button
+              cinema-button--main
+            "
             type="button"
           >
             WATCH FILM
@@ -75,100 +113,40 @@ export function setupCinemaViewer() {
 
           <button
             id="cinema-return"
-            class="cinema-button cinema-button--secondary"
+            class="
+              cinema-button
+              cinema-button--secondary
+            "
             type="button"
           >
-            RETURN TO MUSEUM
+            RETURN TO CINEMA ROOM
           </button>
         </div>
       </section>
 
-      <!-- FULLSCREEN CONFIRMATION -->
-      <section
-        id="cinema-screen-confirmation"
-        class="cinema-screen"
-        hidden
-      >
-        <button
-          id="cinema-confirmation-close"
-          class="cinema-close"
-          type="button"
-          aria-label="Return to cinema menu"
-        >
-          ×
-        </button>
+      <!-- ==========================================
+           PLAYER
+      =========================================== -->
 
-        <p class="cinema-eyebrow">
-          FULLSCREEN VIEWING
-        </p>
-
-        <h2 class="cinema-subtitle">
-          THE FILM WILL OPEN<br>
-          IN FULLSCREEN
-        </h2>
-
-        <p class="cinema-description">
-          Press Escape at any time to leave fullscreen.
-        </p>
-
-        <div class="cinema-actions">
-          <button
-            id="cinema-enter-fullscreen"
-            class="cinema-button cinema-button--main"
-            type="button"
-          >
-            ENTER FULLSCREEN
-          </button>
-
-          <button
-            id="cinema-confirmation-back"
-            class="cinema-button cinema-button--secondary"
-            type="button"
-          >
-            BACK
-          </button>
-        </div>
-      </section>
-
-      <!-- PLAYER -->
       <section
         id="cinema-screen-player"
-        class="cinema-screen cinema-screen--player"
+        class="
+          cinema-screen
+          cinema-screen--player
+        "
         hidden
       >
         <button
           id="cinema-player-close"
-          class="cinema-close cinema-close--player"
+          class="
+            cinema-close
+            cinema-close--player
+          "
           type="button"
           aria-label="Close film"
         >
           ×
         </button>
-
-        <div
-          id="cinema-placeholder"
-          class="cinema-placeholder"
-        >
-          <p class="cinema-eyebrow">
-            SCREENING ROOM
-          </p>
-
-          <h2 class="cinema-subtitle">
-            FILM WILL BE ADDED SOON
-          </h2>
-
-          <p class="cinema-description">
-            The screening programme is currently being prepared.
-          </p>
-
-          <button
-            id="cinema-placeholder-return"
-            class="cinema-button cinema-button--secondary"
-            type="button"
-          >
-            RETURN
-          </button>
-        </div>
 
         <video
           id="cinema-video"
@@ -178,18 +156,52 @@ export function setupCinemaViewer() {
           preload="metadata"
           hidden
         ></video>
+
+        <div
+          id="cinema-placeholder"
+          class="cinema-placeholder"
+          hidden
+        >
+          <p class="cinema-eyebrow">
+            SCREENING ROOM
+          </p>
+
+          <h2 class="cinema-subtitle">
+            FILM UNAVAILABLE
+          </h2>
+
+          <p class="cinema-description">
+            The video file could not be loaded.
+          </p>
+
+          <button
+            id="cinema-placeholder-return"
+            class="
+              cinema-button
+              cinema-button--secondary
+            "
+            type="button"
+          >
+            RETURN TO CINEMA ROOM
+          </button>
+        </div>
       </section>
 
     </div>
   `;
 
-  document.body.appendChild(cinemaRoot);
+  document.body.appendChild(
+    cinemaRoot
+  );
 
-  cinemaVideo = document.getElementById("cinema-video");
+  cinemaVideo =
+    document.getElementById(
+      "cinema-video"
+    );
 
   bindCinemaEvents();
   updateFilm();
-  showScreen("menu");
+  showScreen("warning");
 }
 
 // =====================================================
@@ -197,87 +209,73 @@ export function setupCinemaViewer() {
 // =====================================================
 
 function bindCinemaEvents() {
-  const closeButton =
-    document.getElementById("cinema-close");
+  document
+    .getElementById(
+      "cinema-warning-close"
+    )
+    ?.addEventListener(
+      "click",
+      closeCinemaViewer
+    );
 
-  const returnButton =
-    document.getElementById("cinema-return");
+  document
+    .getElementById(
+      "cinema-return"
+    )
+    ?.addEventListener(
+      "click",
+      closeCinemaViewer
+    );
 
-  const watchButton =
-    document.getElementById("cinema-watch");
+  document
+    .getElementById(
+      "cinema-watch"
+    )
+    ?.addEventListener(
+      "click",
+      openPlayer
+    );
 
-  const confirmationCloseButton =
-    document.getElementById("cinema-confirmation-close");
+  document
+    .getElementById(
+      "cinema-player-close"
+    )
+    ?.addEventListener(
+      "click",
+      closeCinemaViewer
+    );
 
-  const confirmationBackButton =
-    document.getElementById("cinema-confirmation-back");
-
-  const fullscreenButton =
-    document.getElementById("cinema-enter-fullscreen");
-
-  const playerCloseButton =
-    document.getElementById("cinema-player-close");
-
-  const placeholderReturnButton =
-    document.getElementById("cinema-placeholder-return");
-
-  closeButton?.addEventListener(
-    "click",
-    closeCinemaViewer
-  );
-
-  returnButton?.addEventListener(
-    "click",
-    closeCinemaViewer
-  );
-
-  watchButton?.addEventListener(
-    "click",
-    () => {
-      showScreen("confirmation");
-    }
-  );
-
-  confirmationCloseButton?.addEventListener(
-    "click",
-    () => {
-      showScreen("menu");
-    }
-  );
-
-  confirmationBackButton?.addEventListener(
-    "click",
-    () => {
-      showScreen("menu");
-    }
-  );
-
-  fullscreenButton?.addEventListener(
-    "click",
-    openPlayer
-  );
-
-  playerCloseButton?.addEventListener(
-    "click",
-    closePlayer
-  );
-
-  placeholderReturnButton?.addEventListener(
-    "click",
-    closePlayer
-  );
+  document
+    .getElementById(
+      "cinema-placeholder-return"
+    )
+    ?.addEventListener(
+      "click",
+      closeCinemaViewer
+    );
 
   cinemaRoot?.addEventListener(
     "click",
     event => {
-      if (
-        event.target.classList.contains(
-          "cinema-viewer__backdrop"
-        )
-      ) {
+      const backdrop =
+        event.target.closest?.(
+          "[data-cinema-close]"
+        );
+
+      if (backdrop) {
         closeCinemaViewer();
       }
     }
+  );
+
+  cinemaVideo?.addEventListener(
+    "ended",
+    closeCinemaViewer
+  );
+
+  cinemaVideo?.addEventListener(
+    "error",
+    showVideoError
   );
 
   document.addEventListener(
@@ -301,50 +299,70 @@ export function openCinemaViewer() {
   }
 
   if (!cinemaRoot) {
-    console.error("Cinema viewer was not created.");
+    console.error(
+      "Cinema viewer was not created."
+    );
+
     return;
   }
 
   cinemaIsOpen = true;
 
+  stopFilm();
+  showScreen("warning");
+
   cinemaRoot.hidden = false;
 
   requestAnimationFrame(() => {
-    cinemaRoot.classList.add("is-visible");
+    cinemaRoot.classList.add(
+      "is-visible"
+    );
   });
 
   document.body.classList.add(
     "cinema-viewer-open"
   );
 
-  showScreen("menu");
   lockMuseumInteraction();
 }
 
 export function closeCinemaViewer() {
-  if (!cinemaRoot) {
+  if (
+    !cinemaRoot ||
+    !cinemaIsOpen
+  ) {
     return;
   }
 
   cinemaIsOpen = false;
 
   stopFilm();
-  leaveFullscreen();
 
-  cinemaRoot.classList.remove("is-visible");
+  cinemaRoot.classList.remove(
+    "is-visible"
+  );
 
   document.body.classList.remove(
     "cinema-viewer-open"
   );
 
-  window.setTimeout(() => {
-    if (!cinemaIsOpen && cinemaRoot) {
-      cinemaRoot.hidden = true;
-    }
-  }, 250);
-
-  showScreen("menu");
   unlockMuseumInteraction();
+
+  leaveFullscreen();
+
+  window.setTimeout(() => {
+    if (
+      cinemaRoot &&
+      !cinemaIsOpen
+    ) {
+      cinemaRoot.hidden = true;
+      showScreen("warning");
+    }
+  }, 220);
+}
+
+export function isCinemaViewerOpen() {
+  return cinemaIsOpen;
 }
 
 // =====================================================
@@ -358,12 +376,9 @@ function showScreen(screenName) {
 
   currentScreen = screenName;
 
-  const menuScreen =
-    document.getElementById("cinema-screen-menu");
-
-  const confirmationScreen =
+  const warningScreen =
     document.getElementById(
-      "cinema-screen-confirmation"
+      "cinema-screen-warning"
     );
 
   const playerScreen =
@@ -371,14 +386,9 @@ function showScreen(screenName) {
       "cinema-screen-player"
     );
 
-  if (menuScreen) {
-    menuScreen.hidden =
-      screenName !== "menu";
-  }
-
-  if (confirmationScreen) {
-    confirmationScreen.hidden =
-      screenName !== "confirmation";
+  if (warningScreen) {
+    warningScreen.hidden =
+      screenName !== "warning";
   }
 
   if (playerScreen) {
@@ -387,34 +397,22 @@ function showScreen(screenName) {
   }
 
   window.setTimeout(() => {
-    focusCurrentScreen(screenName);
-  }, 50);
-}
+    if (screenName === "warning") {
+      document
+        .getElementById(
+          "cinema-watch"
+        )
+        ?.focus();
+    }
 
-function focusCurrentScreen(screenName) {
-  if (screenName === "menu") {
-    document
-      .getElementById("cinema-watch")
-      ?.focus();
-
-    return;
-  }
-
-  if (screenName === "confirmation") {
-    document
-      .getElementById(
-        "cinema-enter-fullscreen"
-      )
-      ?.focus();
-
-    return;
-  }
-
-  if (screenName === "player") {
-    document
-      .getElementById("cinema-player-close")
-      ?.focus();
-  }
+    if (screenName === "player") {
+      document
+        .getElementById(
+          "cinema-player-close"
+        )
+        ?.focus();
+    }
+  }, 60);
 }
 
 // =====================================================
@@ -422,6 +420,10 @@ function focusCurrentScreen(screenName) {
 // =====================================================
 
 async function openPlayer() {
+  if (!cinemaVideo) {
+    return;
+  }
+
   showScreen("player");
   updateFilm();
 
@@ -444,26 +446,24 @@ async function openPlayer() {
     );
   }
 
-  if (
-    currentFilm.videoUrl &&
-    cinemaVideo
-  ) {
-    try {
-      cinemaVideo.currentTime = 0;
-      await cinemaVideo.play();
-    } catch (error) {
-      console.warn(
-        "Video could not start:",
-        error
-      );
-    }
-  }
-}
+  if (!currentFilm.videoUrl) {
+    showVideoError();
 
-function closePlayer() {
-  stopFilm();
-  leaveFullscreen();
-  showScreen("menu");
+    return;
+  }
+
+  try {
+    cinemaVideo.currentTime = 0;
+
+    await cinemaVideo.play();
+  } catch (error) {
+    console.warn(
+      "Video could not start:",
+      error
+    );
+
+    showVideoError();
+  }
 }
 
 function stopFilm() {
@@ -483,6 +483,21 @@ function stopFilm() {
   }
 }
 
+function showVideoError() {
+  const placeholder =
+    document.getElementById(
+      "cinema-placeholder"
+    );
+
+  if (cinemaVideo) {
+    cinemaVideo.hidden = true;
+  }
+
+  if (placeholder) {
+    placeholder.hidden = false;
+  }
+}
+
 // =====================================================
 // FULLSCREEN
 // =====================================================
@@ -492,16 +507,18 @@ function leaveFullscreen() {
     return;
   }
 
-  document.exitFullscreen().catch(() => {});
+  document
+    .exitFullscreen()
+    .catch(() => {});
 }
 
 function handleFullscreenChange() {
   if (
+    cinemaIsOpen &&
     currentScreen === "player" &&
     !document.fullscreenElement
   ) {
-    stopFilm();
-    showScreen("menu");
+    closeCinemaViewer();
   }
 }
 
@@ -510,17 +527,25 @@ function handleFullscreenChange() {
 // =====================================================
 
 export function setCinemaFilm({
-  title = "UNTITLED FILM",
-  artist = "",
-  year = "",
-  description = "",
+  title = "HIM",
+  artist = "Asaf Tal",
+  year = "2026",
+
+  warningTitle = "18+",
+
+  warningText =
+    `This film contains disturbing imagery and themes
+    that may not be suitable for all viewers.
+    Viewer discretion is advised.`,
+
   videoUrl = ""
 } = {}) {
   currentFilm = {
     title,
     artist,
     year,
-    description,
+    warningTitle,
+    warningText,
     videoUrl
   };
 
@@ -528,6 +553,26 @@ export function setCinemaFilm({
 }
 
 function updateFilm() {
+  const warningTitle =
+    document.getElementById(
+      "cinema-warning-title"
+    );
+
+  const warningText =
+    document.getElementById(
+      "cinema-warning-text"
+    );
+
+  if (warningTitle) {
+    warningTitle.textContent =
+      currentFilm.warningTitle;
+  }
+
+  if (warningText) {
+    warningText.textContent =
+      currentFilm.warningText;
+  }
+
   if (!cinemaVideo) {
     return;
   }
@@ -537,10 +582,15 @@ function updateFilm() {
       "cinema-placeholder"
     );
 
+  if (placeholder) {
+    placeholder.hidden = true;
+  }
+
   if (currentFilm.videoUrl) {
     if (
-      cinemaVideo.getAttribute("src") !==
-      currentFilm.videoUrl
+      cinemaVideo.getAttribute(
+        "src"
+      ) !== currentFilm.videoUrl
     ) {
       cinemaVideo.src =
         currentFilm.videoUrl;
@@ -550,15 +600,13 @@ function updateFilm() {
 
     cinemaVideo.hidden = false;
 
-    if (placeholder) {
-      placeholder.hidden = true;
-    }
-
     return;
   }
 
   cinemaVideo.pause();
-  cinemaVideo.removeAttribute("src");
+  cinemaVideo.removeAttribute(
+    "src"
+  );
   cinemaVideo.load();
   cinemaVideo.hidden = true;
 
@@ -592,7 +640,11 @@ function handleKeyboard(event) {
     " "
   ];
 
-  if (museumKeys.includes(event.key)) {
+  if (
+    museumKeys.includes(
+      event.key
+    )
+  ) {
     event.preventDefault();
     event.stopPropagation();
   }
@@ -601,15 +653,8 @@ function handleKeyboard(event) {
     return;
   }
 
-  if (currentScreen === "player") {
-    closePlayer();
-    return;
-  }
-
-  if (currentScreen === "confirmation") {
-    showScreen("menu");
-    return;
-  }
+  event.preventDefault();
+  event.stopPropagation();
 
   closeCinemaViewer();
 }

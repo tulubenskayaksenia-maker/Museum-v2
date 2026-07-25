@@ -21,18 +21,31 @@ import {
   requestMainGateOpening
 } from "../objects/door.js";
 
+import {
+  openArtistIntro,
+  isArtistIntroOpen
+} from "../ui/artistIntro.js";
+
+
 // =====================================================
-// RAYCASTER
+// THREE.JS HELPERS
 // =====================================================
 
 const raycaster =
   new THREE.Raycaster();
 
-const mouse =
+const pointer =
   new THREE.Vector2();
 
-const movementDirection =
+const forwardVector =
   new THREE.Vector3();
+
+const rightVector =
+  new THREE.Vector3();
+
+const movementVector =
+  new THREE.Vector3();
+
 
 // =====================================================
 // DEVICE
@@ -42,6 +55,7 @@ const isTouchDevice =
   window.matchMedia(
     "(pointer: coarse)"
   ).matches;
+
 
 // =====================================================
 // ROOMS
@@ -54,45 +68,88 @@ let currentRoom =
 
 const navigationHistory = [];
 
+
+// =====================================================
+// CAMERA ROTATION
+// =====================================================
+
+let yaw =
+  camera.rotation.y;
+
+let pitch =
+  camera.rotation.x;
+
+let targetYaw =
+  yaw;
+
+let targetPitch =
+  pitch;
+
+
 // =====================================================
 // CAMERA MOVEMENT
 // =====================================================
 
-let targetX =
-  camera.position.x;
+let currentVelocityX = 0;
+let currentVelocityZ = 0;
 
-let targetY =
-  camera.position.y;
+let clickStepRemaining = 0;
+let clickStepEndTime = 0;
+let clickStepDirection = 1;
+let clickStepYaw = yaw;
 
-let targetZ =
-  camera.position.z;
-
-/*
-  Desktop:
-
-  Положение мышки внутри экрана.
-  Камера автоматически смотрит
-  в соответствующую сторону.
-*/
-
-let lookX = 0;
-let lookY = 0;
-
-/*
-  Mobile:
-
-  Накопленный поворот камеры после свайпов.
-*/
-
-let mobileYaw = 0;
-let mobilePitch = 0;
-
-let isWalking = false;
 let walkTime = 0;
 
+let previousUpdateTime =
+  performance.now();
+
+
 // =====================================================
-// TOUCH STATE
+// KEYBOARD
 // =====================================================
+
+const pressedKeys =
+  new Set();
+
+
+// =====================================================
+// DESKTOP MOUSE
+// =====================================================
+
+let leftMouseDown = false;
+
+let leftMouseDownTime = 0;
+
+let leftMouseStartX = 0;
+let leftMouseStartY = 0;
+
+let mouseMovedDuringPress =
+  false;
+
+let rightMouseDown = false;
+let rightMouseDownTime = 0;
+let rightMouseStartX = 0;
+let rightMouseStartY = 0;
+let rightMouseMovedDuringPress = false;
+
+// Mouse movement uses the camera's current horizontal heading directly.
+// Only scalar speed is smoothed, so there is no sideways inertia
+// and no delayed steering that can feel like drifting.
+let currentMoveSpeed = 0;
+
+let lastVerticalLookInputTime = 0;
+
+
+// =====================================================
+// MOBILE TOUCH
+// =====================================================
+
+let isTouching = false;
+let touchMoved = false;
+let isPinching = false;
+let mobileWalking = false;
+
+let touchStartTime = 0;
 
 let touchStartX = 0;
 let touchStartY = 0;
@@ -100,68 +157,170 @@ let touchStartY = 0;
 let previousTouchX = 0;
 let previousTouchY = 0;
 
-let touchMoved = false;
-let isTouching = false;
+let pinchStartDistance = 0;
+let pinchStartFov = 70;
 
-let ignoreNextClick = false;
+
+// =====================================================
+// TICKET NOTICE
+// =====================================================
 
 let ticketNoticeTimeout = null;
 
-/*
-  Не даём предупреждению мигать при каждом клике.
-  Оно снова станет доступно только после того,
-  как посетитель отойдёт от двери.
-*/
-let ticketNoticeShownForApproach = false;
+let ticketNoticeShownForApproach =
+  false;
+
 
 // =====================================================
-// PINCH ZOOM
+// GENERAL SETTINGS
 // =====================================================
-
-let pinchStartDistance = 0;
-let pinchStartFov = 70;
-let isPinching = false;
-
-// =====================================================
-// SETTINGS
-// =====================================================
-
-const STEP_SIZE_DESKTOP =
-  2.8;
-
-const STEP_SIZE_MOBILE =
-  3.2;
 
 const DEFAULT_EYE_HEIGHT =
-  1.98;
+  2.4;
 
 const ROOM_EYE_HEIGHTS = {
-  entrance: 1.98,
+  entrance: 2.4,
 
-  leftRoom: 1.98,
-  rightRoom: 1.98,
+  leftRoom: 2.4,
+  rightRoom: 2.4,
 
-  corridor: 6.73,
+  corridor: 7.15,
 
-  room01: 2.0,
-  room02: 2.02,
-  room03: 2.0,
-  room04: 1.98,
-  room05: 1.98,
-  room06: 1.98,
+  room01: 2.42,
+  room02: 2.44,
+  room03: 2.42,
+  room04: 2.4,
+  room05: 2.4,
+  room06: 2.4,
 
-  womenWC: 1.98,
-  menWC: 1.98
+  womenWC: 2.4,
+  menWC: 2.4
 };
 
-const EXIT_THRESHOLD =
-  0.35;
+
+// =====================================================
+// MOVEMENT SETTINGS
+// =====================================================
+
+const WALK_SPEED =
+  5.8;
+
+const FAST_WALK_SPEED =
+  8.2;
+
+const MOBILE_WALK_SPEED =
+  3.8;
+
+const MOVEMENT_ACCELERATION =
+  24;
+
+const MOVEMENT_DECELERATION =
+  42;
+
+// Mouse-held walking follows the current yaw directly.
+// This produces a clean forward curve instead of a sideways slide.
+
+
+// =====================================================
+// LOOK SETTINGS
+// =====================================================
 
 /*
-  Physical bounds of the back wall.
-  The wall is centred at z = -24.8 and is 1.2 units thick.
-  Separate enter/exit thresholds prevent rapid room-state flicker.
+  Поворот зависит только от реального
+  движения мыши — event.movementX/Y.
+
+  Уменьшай эти значения, если захочешь
+  сделать камеру ещё медленнее.
 */
+
+const MOUSE_LOOK_HORIZONTAL =
+  0.00175;
+
+const MOUSE_LOOK_VERTICAL =
+  0.00115;
+
+const LOOK_SMOOTHNESS =
+  15;
+
+// Horizon assist: while walking, the view returns to eye level sooner.
+// While standing, the visitor has enough time to inspect high artworks.
+const AUTO_LEVEL_WALK_DELAY =
+  650;
+
+const AUTO_LEVEL_IDLE_DELAY =
+  2400;
+
+const AUTO_LEVEL_WALK_RESPONSE =
+  3.2;
+
+const AUTO_LEVEL_IDLE_RESPONSE =
+  1.15;
+
+const KEYBOARD_TURN_SPEED =
+  1.65;
+
+const MOBILE_LOOK_SPEED =
+  0.004;
+
+const MIN_PITCH =
+  THREE.MathUtils.degToRad(-50);
+
+const MAX_PITCH =
+  THREE.MathUtils.degToRad(50);
+
+
+// =====================================================
+// CLICK / HOLD SETTINGS
+// =====================================================
+
+const HOLD_TO_WALK_DELAY =
+  180;
+
+const CLICK_MOVEMENT_LIMIT =
+  8;
+
+const MOBILE_HOLD_DELAY =
+  230;
+
+const TOUCH_DRAG_THRESHOLD =
+  9;
+
+const CLICK_STEP_DISTANCE =
+  0.9;
+
+const CLICK_STEP_SPEED =
+  2.6;
+
+const CLICK_STEP_MAX_DURATION =
+  700;
+
+
+// =====================================================
+// WALKING ANIMATION
+// =====================================================
+
+const HEAD_BOB_AMOUNT =
+  0;
+
+const HEAD_BOB_SPEED =
+  8;
+
+
+// =====================================================
+// ZOOM
+// =====================================================
+
+const MIN_FOV =
+  52;
+
+const MAX_FOV =
+  72;
+
+
+// =====================================================
+// ENTRANCE / CORRIDOR
+// =====================================================
+
 const ENTRANCE_TO_CORRIDOR_Z =
   -25.45;
 
@@ -171,76 +330,9 @@ const CORRIDOR_TO_ENTRANCE_Z =
 const CLOSED_GATE_STOP_Z =
   -23.75;
 
-/*
-  Без билета посетитель останавливается
-  примерно на середине лестницы.
-
-  Лестница идёт от z = -6 до z = -21,
-  её середина находится около z = -13.5.
-*/
 const TICKET_NOTICE_STOP_Z =
   -13.5;
 
-/*
-  Desktop look.
-
-  Чем больше значение,
-  тем сильнее камера поворачивается
-  к краям экрана.
-*/
-
-const LOOK_HORIZONTAL =
-  0.82;
-
-const LOOK_VERTICAL =
-  0.22;
-
-const LOOK_OFFSET =
-  0.08;
-
-/*
-  Камера чуть быстрее догоняет мышку,
-  но движение остаётся мягким.
-*/
-
-const LOOK_SMOOTHNESS =
-  0.08;
-
-const WALK_SMOOTHNESS =
-  0.08;
-
-const HEAD_BOB_AMOUNT =
-  0.018;
-
-const HEAD_BOB_SPEED =
-  8;
-
-/*
-  Mobile swipe sensitivity.
-*/
-
-const MOBILE_LOOK_SPEED =
-  0.005;
-
-const MOBILE_MIN_PITCH =
-  -0.7;
-
-const MOBILE_MAX_PITCH =
-  0.7;
-
-/*
-  Если палец сдвинулся меньше этого значения,
-  жест считается тапом.
-*/
-
-const TOUCH_DRAG_THRESHOLD =
-  9;
-
-const MIN_FOV =
-  55;
-
-const MAX_FOV =
-  78;
 
 // =====================================================
 // ROOM LIMITS
@@ -293,12 +385,6 @@ const ROOM_LIMITS = {
   },
 
   corridor: {
-    /*
-      Глобальные координаты непрерывного коридора.
-
-      Вход находится сразу за задней стеной холла,
-      поэтому при переходе камера не переносится.
-    */
     startZ: -23.4,
     endZ: -195.6,
 
@@ -355,6 +441,7 @@ const ROOM_LIMITS = {
   }
 };
 
+
 // =====================================================
 // SETUP
 // =====================================================
@@ -375,26 +462,24 @@ export function setupMovement(
   camera.rotation.order =
     "YXZ";
 
-  targetX =
-    camera.position.x;
-
-  targetY =
-    initialEyeHeight;
-
-  targetZ =
-    camera.position.z;
-
-  mobileYaw =
+  yaw =
     camera.rotation.y;
 
-  mobilePitch =
-    camera.rotation.x;
+  pitch = 0;
+
+  targetYaw =
+    yaw;
+
+  targetPitch = 0;
+
+  camera.rotation.x = 0;
+
+  updatePointerCoordinates(
+    window.innerWidth / 2,
+    window.innerHeight / 2
+  );
 
   setupInteractionStyles();
-
-  /*
-    Desktop events.
-  */
 
   window.addEventListener(
     "mousemove",
@@ -402,8 +487,13 @@ export function setupMovement(
   );
 
   window.addEventListener(
-    "click",
-    handleClick
+    "mousedown",
+    handleMouseDown
+  );
+
+  window.addEventListener(
+    "mouseup",
+    handleMouseUp
   );
 
   window.addEventListener(
@@ -412,8 +502,23 @@ export function setupMovement(
   );
 
   window.addEventListener(
+    "museum-back-request",
+    handleExternalBackRequest
+  );
+
+  window.addEventListener(
     "keydown",
     handleKeyDown
+  );
+
+  window.addEventListener(
+    "keyup",
+    handleKeyUp
+  );
+
+  window.addEventListener(
+    "blur",
+    clearInputState
   );
 
   window.addEventListener(
@@ -423,10 +528,6 @@ export function setupMovement(
       passive: false
     }
   );
-
-  /*
-    Mobile events.
-  */
 
   window.addEventListener(
     "touchstart",
@@ -463,10 +564,14 @@ export function setupMovement(
   if (isTouchDevice) {
     createMobileBackButton();
   }
+
+  updateCursor();
+  broadcastNavigationState();
 }
 
+
 // =====================================================
-// UI CHECK
+// INTERFACE CHECK
 // =====================================================
 
 function isInterfaceElement(
@@ -480,36 +585,75 @@ function isInterfaceElement(
     target.closest(
       [
         "#ticket-menu",
+        "#artist-intro",
         "#cinema-viewer",
         "#sculpture-viewer",
         "#museum-onboarding",
         "#museum-instructions",
-        "#museum-mobile-back"
+        "#museum-mobile-back",
+        "#museum-help-button",
+        "#museum-desktop-mouse-controls"
       ].join(",")
     )
   );
 }
 
+function isOnboardingVisible() {
+  return (
+    document
+      .getElementById(
+        "museum-onboarding"
+      )
+      ?.classList.contains(
+        "visible"
+      ) ?? false
+  );
+}
+
+function isInstructionsVisible() {
+  return (
+    document
+      .getElementById(
+        "museum-instructions"
+      )
+      ?.classList.contains(
+        "visible"
+      ) ?? false
+  );
+}
+
+function isInteractionBlocked() {
+  return (
+    isTicketMenuOpen() ||
+    isArtworkOpen() ||
+    isArtistIntroOpen() ||
+    isOnboardingVisible() ||
+    isInstructionsVisible()
+  );
+}
+
+
 // =====================================================
 // POINTER COORDINATES
 // =====================================================
 
-function updateMouseCoordinates(
+function updatePointerCoordinates(
   clientX,
   clientY
 ) {
-  mouse.x =
+  pointer.x =
     (
       clientX /
       window.innerWidth
     ) * 2 - 1;
 
-  mouse.y =
+  pointer.y =
     -(
       clientY /
       window.innerHeight
     ) * 2 + 1;
 }
+
 
 // =====================================================
 // DESKTOP MOUSE LOOK
@@ -520,88 +664,488 @@ function handleMouseMove(event) {
     return;
   }
 
-  updateMouseCoordinates(
+  updatePointerCoordinates(
     event.clientX,
     event.clientY
   );
 
   /*
-    Старая логика сохранена:
+    movementX и movementY существуют
+    только в момент настоящего движения мыши.
 
-    положение мыши определяет,
-    куда смотрит камера.
+    Когда мышь перестала двигаться,
+    targetYaw и targetPitch больше не меняются.
   */
 
-  lookX =
-    event.clientX /
-      window.innerWidth -
-    0.5;
+  if (
+    !isInteractionBlocked() &&
+    !isInterfaceElement(event.target)
+  ) {
+    const deltaX =
+      THREE.MathUtils.clamp(
+        event.movementX || 0,
+        -70,
+        70
+      );
 
-  lookY =
-    event.clientY /
-      window.innerHeight -
-    0.5;
+    const deltaY =
+      THREE.MathUtils.clamp(
+        event.movementY || 0,
+        -55,
+        55
+      );
+
+    targetYaw -=
+      deltaX *
+      MOUSE_LOOK_HORIZONTAL;
+
+    if (Math.abs(deltaY) > 0) {
+      targetPitch -=
+        deltaY *
+        MOUSE_LOOK_VERTICAL;
+
+      lastVerticalLookInputTime =
+        performance.now();
+    }
+
+    targetPitch =
+      THREE.MathUtils.clamp(
+        targetPitch,
+        MIN_PITCH,
+        MAX_PITCH
+      );
+  }
+
+  if (leftMouseDown) {
+    const distance =
+      Math.hypot(
+        event.clientX -
+          leftMouseStartX,
+
+        event.clientY -
+          leftMouseStartY
+      );
+
+    if (
+      distance >
+      CLICK_MOVEMENT_LIMIT
+    ) {
+      mouseMovedDuringPress =
+        true;
+    }
+  }
+
+  if (rightMouseDown) {
+    const distance =
+      Math.hypot(
+        event.clientX -
+          rightMouseStartX,
+
+        event.clientY -
+          rightMouseStartY
+      );
+
+    if (
+      distance >
+      CLICK_MOVEMENT_LIMIT
+    ) {
+      rightMouseMovedDuringPress =
+        true;
+    }
+  }
+
+  updateCursor();
+}
+
+
+// =====================================================
+// DESKTOP MOUSE BUTTONS
+// =====================================================
+
+function isBackwardMouseEvent(event) {
+  return (
+    event.button === 2 ||
+    (
+      event.button === 0 &&
+      event.ctrlKey
+    )
+  );
+}
+
+function handleMouseDown(event) {
+  if (isTouchDevice) {
+    return;
+  }
+
+  const backwardButton =
+    isBackwardMouseEvent(event);
+
+  const forwardButton =
+    event.button === 0 &&
+    !event.ctrlKey;
+
+  if (
+    !forwardButton &&
+    !backwardButton
+  ) {
+    return;
+  }
+
+  if (backwardButton) {
+    event.preventDefault();
+  }
+
+  // A normal left click still closes an open artwork.
+  if (
+    forwardButton &&
+    isArtworkOpen()
+  ) {
+    event.preventDefault();
+    clearInputState();
+    closeArtwork();
+    updateCursor();
+    return;
+  }
+
+  if (
+    isInterfaceElement(event.target) ||
+    isInteractionBlocked()
+  ) {
+    return;
+  }
+
+  clickStepRemaining = 0;
+  clickStepEndTime = 0;
+
+  // Walking uses the current horizontal camera heading.
+  // There is no delayed steering vector, so turning does not slide sideways.
+
+  if (backwardButton) {
+    rightMouseDown = true;
+    rightMouseDownTime =
+      performance.now();
+    rightMouseStartX =
+      event.clientX;
+    rightMouseStartY =
+      event.clientY;
+    rightMouseMovedDuringPress =
+      false;
+  } else {
+    leftMouseDown = true;
+    leftMouseDownTime =
+      performance.now();
+    leftMouseStartX =
+      event.clientX;
+    leftMouseStartY =
+      event.clientY;
+    mouseMovedDuringPress =
+      false;
+  }
+
+  updatePointerCoordinates(
+    event.clientX,
+    event.clientY
+  );
+
+  updateCursor();
+}
+
+function handleMouseUp(event) {
+  if (isTouchDevice) {
+    return;
+  }
+
+  const backwardButton =
+    isBackwardMouseEvent(event);
+
+  const forwardButton =
+    event.button === 0 &&
+    !event.ctrlKey;
+
+  if (
+    backwardButton &&
+    rightMouseDown
+  ) {
+    event.preventDefault();
+
+    rightMouseDown = false;
+
+    const pressDuration =
+      performance.now() -
+      rightMouseDownTime;
+
+    const isShortClick =
+      pressDuration <
+        HOLD_TO_WALK_DELAY &&
+      !rightMouseMovedDuringPress;
+
+    if (
+      isShortClick &&
+      !isInterfaceElement(
+        event.target
+      )
+    ) {
+      startClickStep(-1);
+    }
+
+    updateCursor();
+    return;
+  }
+
+  if (
+    !forwardButton ||
+    !leftMouseDown
+  ) {
+    return;
+  }
+
+  leftMouseDown = false;
+
+  const pressDuration =
+    performance.now() -
+    leftMouseDownTime;
+
+  const isShortClick =
+    pressDuration <
+      HOLD_TO_WALK_DELAY &&
+    !mouseMovedDuringPress;
+
+  if (
+    isShortClick &&
+    !isInterfaceElement(
+      event.target
+    )
+  ) {
+    updatePointerCoordinates(
+      event.clientX,
+      event.clientY
+    );
+
+    const actionHandled =
+      performPrimaryAction();
+
+    if (!actionHandled) {
+      startClickStep(1);
+    }
+  }
 
   updateCursor();
 }
 
 // =====================================================
-// DESKTOP CLICK
+// KEYBOARD
 // =====================================================
 
-function handleClick(event) {
-  /*
-    После мобильного touchend браузер
-    иногда создаёт дополнительный click.
-    Его нужно игнорировать.
-  */
+function handleKeyDown(event) {
+  // event.code привязан к физическому расположению клавиши,
+  // поэтому управление работает при любой раскладке языка.
+  const code = event.code;
 
-  if (ignoreNextClick) {
-    ignoreNextClick = false;
-
-    return;
-  }
-
-  if (isInterfaceElement(event.target)) {
-    return;
-  }
+  const movementCodes = [
+    "KeyW",
+    "KeyA",
+    "KeyS",
+    "KeyD",
+    "ShiftLeft",
+    "ShiftRight",
+    "ArrowUp",
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight",
+    "KeyQ",
+    "KeyE"
+  ];
 
   if (
-    event.button !== undefined &&
-    event.button !== 0
+    movementCodes.includes(code)
+  ) {
+    clickStepRemaining = 0;
+    clickStepEndTime = 0;
+
+    pressedKeys.add(code);
+
+    event.preventDefault();
+
+    return;
+  }
+
+  if (code === "Backspace") {
+    event.preventDefault();
+
+    handleBackAction();
+
+    return;
+  }
+
+  if (code === "Escape") {
+    clearInputState();
+
+    if (isTicketMenuOpen()) {
+      closeTicketMenu();
+
+      return;
+    }
+
+    if (isArtworkOpen()) {
+      closeArtwork();
+
+      return;
+    }
+  }
+}
+
+function handleKeyUp(event) {
+  pressedKeys.delete(
+    event.code
+  );
+}
+
+
+// =====================================================
+// RESET INPUT
+// =====================================================
+
+function clearInputState() {
+  pressedKeys.clear();
+
+  leftMouseDown =
+    false;
+
+  rightMouseDown =
+    false;
+
+  mobileWalking =
+    false;
+
+  clickStepRemaining =
+    0;
+
+  clickStepEndTime =
+    0;
+
+  clickStepDirection =
+    1;
+
+  currentVelocityX =
+    0;
+
+  currentVelocityZ =
+    0;
+
+  currentMoveSpeed =
+    0;
+
+}
+
+
+// =====================================================
+// SECONDARY CLICK / BACKWARD MOVEMENT
+// =====================================================
+
+function handleRightClick(event) {
+  if (
+    isInterfaceElement(
+      event.target
+    )
   ) {
     return;
   }
 
-  updateMouseCoordinates(
-    event.clientX,
-    event.clientY
-  );
-
-  performPrimaryAction();
+  // Secondary click is movement now, not instant navigation.
+  // Prevent the browser context menu from appearing.
+  event.preventDefault();
 }
+
+function handleExternalBackRequest() {
+  clearInputState();
+  handleBackAction();
+}
+
+function broadcastNavigationState() {
+  window.dispatchEvent(
+    new CustomEvent(
+      "museum-navigation-state",
+      {
+        detail: {
+          canGoBack:
+            navigationHistory.length > 0
+        }
+      }
+    )
+  );
+}
+
+
+// =====================================================
+// WHEEL ZOOM
+// =====================================================
+
+function handleWheel(event) {
+  if (
+    isInterfaceElement(
+      event.target
+    )
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+
+  camera.fov +=
+    event.deltaY *
+    0.012;
+
+  camera.fov =
+    THREE.MathUtils.clamp(
+      camera.fov,
+      MIN_FOV,
+      MAX_FOV
+    );
+
+  camera.updateProjectionMatrix();
+}
+
 
 // =====================================================
 // MOBILE TOUCH START
 // =====================================================
 
 function handleTouchStart(event) {
+  if (!isTouchDevice) {
+    return;
+  }
+
+  // Повторный тап закрывает открытую картину.
   if (
-    !isTouchDevice ||
-    isInterfaceElement(event.target)
+    isArtworkOpen() &&
+    event.touches.length === 1
+  ) {
+    event.preventDefault();
+    clearInputState();
+    closeArtwork();
+    updateCursor();
+    return;
+  }
+
+  if (
+    isInterfaceElement(
+      event.target
+    )
   ) {
     return;
   }
 
-  /*
-    Два пальца — начало pinch zoom.
-  */
-
   if (
     event.touches.length === 2
   ) {
-    isPinching = true;
-    touchMoved = true;
+    isPinching =
+      true;
+
+    touchMoved =
+      true;
+
+    mobileWalking =
+      false;
 
     pinchStartDistance =
       getTouchDistance(
@@ -626,6 +1170,18 @@ function handleTouchStart(event) {
   const touch =
     event.touches[0];
 
+  isTouching =
+    true;
+
+  touchMoved =
+    false;
+
+  mobileWalking =
+    false;
+
+  touchStartTime =
+    performance.now();
+
   touchStartX =
     touch.clientX;
 
@@ -638,16 +1194,14 @@ function handleTouchStart(event) {
   previousTouchY =
     touch.clientY;
 
-  touchMoved = false;
-  isTouching = true;
-
-  updateMouseCoordinates(
+  updatePointerCoordinates(
     touch.clientX,
     touch.clientY
   );
 
   event.preventDefault();
 }
+
 
 // =====================================================
 // MOBILE TOUCH MOVE
@@ -656,20 +1210,22 @@ function handleTouchStart(event) {
 function handleTouchMove(event) {
   if (
     !isTouchDevice ||
-    isInterfaceElement(event.target)
+    isInterfaceElement(
+      event.target
+    )
   ) {
     return;
   }
-
-  /*
-    Pinch zoom.
-  */
 
   if (
     event.touches.length === 2
   ) {
     if (!isPinching) {
-      isPinching = true;
+      isPinching =
+        true;
+
+      mobileWalking =
+        false;
 
       pinchStartDistance =
         getTouchDistance(
@@ -705,7 +1261,8 @@ function handleTouchMove(event) {
       camera.updateProjectionMatrix();
     }
 
-    touchMoved = true;
+    touchMoved =
+      true;
 
     event.preventDefault();
 
@@ -735,7 +1292,11 @@ function handleTouchMove(event) {
     totalDistance >
     TOUCH_DRAG_THRESHOLD
   ) {
-    touchMoved = true;
+    touchMoved =
+      true;
+
+    mobileWalking =
+      false;
   }
 
   if (touchMoved) {
@@ -747,20 +1308,26 @@ function handleTouchMove(event) {
       touch.clientY -
       previousTouchY;
 
-    mobileYaw -=
+    yaw -=
       deltaX *
       MOBILE_LOOK_SPEED;
 
-    mobilePitch -=
+    pitch -=
       deltaY *
       MOBILE_LOOK_SPEED;
 
-    mobilePitch =
+    pitch =
       THREE.MathUtils.clamp(
-        mobilePitch,
-        MOBILE_MIN_PITCH,
-        MOBILE_MAX_PITCH
+        pitch,
+        MIN_PITCH,
+        MAX_PITCH
       );
+
+    targetYaw =
+      yaw;
+
+    targetPitch =
+      pitch;
   }
 
   previousTouchX =
@@ -769,13 +1336,14 @@ function handleTouchMove(event) {
   previousTouchY =
     touch.clientY;
 
-  updateMouseCoordinates(
+  updatePointerCoordinates(
     touch.clientX,
     touch.clientY
   );
 
   event.preventDefault();
 }
+
 
 // =====================================================
 // MOBILE TOUCH END
@@ -784,15 +1352,12 @@ function handleTouchMove(event) {
 function handleTouchEnd(event) {
   if (
     !isTouchDevice ||
-    isInterfaceElement(event.target)
+    isInterfaceElement(
+      event.target
+    )
   ) {
     return;
   }
-
-  /*
-    Один палец ещё остался:
-    значит жест пока не закончен.
-  */
 
   if (
     event.touches.length > 0
@@ -800,61 +1365,76 @@ function handleTouchEnd(event) {
     return;
   }
 
-  ignoreNextClick = true;
-
-  /*
-    После pinch никакое действие
-    в сцене не выполняется.
-  */
-
   if (isPinching) {
-    isPinching = false;
-    isTouching = false;
-    touchMoved = false;
+    isPinching =
+      false;
+
+    isTouching =
+      false;
+
+    touchMoved =
+      false;
+
+    mobileWalking =
+      false;
 
     event.preventDefault();
 
     return;
   }
 
+  const duration =
+    performance.now() -
+    touchStartTime;
+
   const changedTouch =
     event.changedTouches[0];
 
   if (changedTouch) {
-    updateMouseCoordinates(
+    updatePointerCoordinates(
       changedTouch.clientX,
       changedTouch.clientY
     );
   }
 
-  /*
-    Если палец практически не двигался,
-    это обычный тап.
-  */
+  if (
+    !touchMoved &&
+    duration <
+      MOBILE_HOLD_DELAY
+  ) {
+    const actionHandled =
+      performPrimaryAction();
 
-  if (!touchMoved) {
-    performPrimaryAction();
+    if (!actionHandled) {
+      startClickStep();
+    }
   }
 
-  isTouching = false;
-  touchMoved = false;
+  isTouching =
+    false;
+
+  touchMoved =
+    false;
+
+  mobileWalking =
+    false;
 
   event.preventDefault();
 }
 
-// =====================================================
-// TOUCH CANCEL
-// =====================================================
-
 function handleTouchCancel() {
-  isTouching = false;
-  touchMoved = false;
-  isPinching = false;
-}
+  isTouching =
+    false;
 
-// =====================================================
-// TOUCH DISTANCE
-// =====================================================
+  touchMoved =
+    false;
+
+  isPinching =
+    false;
+
+  mobileWalking =
+    false;
+}
 
 function getTouchDistance(
   firstTouch,
@@ -869,59 +1449,48 @@ function getTouchDistance(
   );
 }
 
+
 // =====================================================
 // PRIMARY ACTION
 // =====================================================
 
 function performPrimaryAction() {
   if (isTicketMenuOpen()) {
-    return;
+    return true;
   }
 
   if (isArtworkOpen()) {
     closeArtwork();
 
-    return;
+    return true;
   }
 
   const interactiveObject =
-    getClickedInteractiveObject();
-
-  // ===================================================
-  // TICKET COMPUTER
-  // ===================================================
+    getInteractiveObject();
 
   if (
     interactiveObject?.userData.type ===
     "ticketComputer"
   ) {
-    stopWalking();
+    clearInputState();
 
     openTicketMenu();
 
-    return;
+    return true;
   }
-
-  // ===================================================
-  // ARTWORK
-  // ===================================================
 
   if (
     interactiveObject?.userData.type ===
     "artwork"
   ) {
-    stopWalking();
+    clearInputState();
 
     openArtwork(
       interactiveObject
     );
 
-    return;
+    return true;
   }
-
-  // ===================================================
-  // DOOR
-  // ===================================================
 
   if (
     interactiveObject?.userData.type ===
@@ -935,183 +1504,83 @@ function performPrimaryAction() {
       targetRoom === "corridor" &&
       !hasTicket()
     ) {
-      stopWalking();
+      clearInputState();
+
       showTicketRequiredNotice();
 
-      return;
+      return true;
     }
 
-    goToRoom(targetRoom);
+    const roomsWithArtistIntro = [
+      "room01",
+      "room02",
+      "room03",
+      "room04"
+    ];
 
-    return;
-  }
+    if (
+      roomsWithArtistIntro.includes(
+        targetRoom
+      )
+    ) {
+      clearInputState();
 
-  // ===================================================
-  // EMPTY SPACE
-  // ===================================================
+      openArtistIntro(
+        targetRoom
+      ).then(
+        (shouldEnter) => {
+          if (shouldEnter) {
+            goToRoom(
+              targetRoom
+            );
+          }
+        }
+      );
 
-  walkTowardPointer();
-}
+      return true;
+    }
 
-// =====================================================
-// RIGHT CLICK
-// =====================================================
-
-function handleRightClick(event) {
-  if (isInterfaceElement(event.target)) {
-    return;
-  }
-
-  event.preventDefault();
-
-  handleBackAction();
-}
-
-// =====================================================
-// BACK ACTION
-// =====================================================
-
-function handleBackAction() {
-  if (isTicketMenuOpen()) {
-    closeTicketMenu();
-
-    return;
-  }
-
-  if (isArtworkOpen()) {
-    closeArtwork();
-
-    return;
-  }
-
-  /*
-    В главном холле действие назад
-    ведёт камеру к стартовой позиции.
-  */
-
-  if (
-    currentRoom === "entrance"
-  ) {
-    walkBackward();
-
-    return;
-  }
-
-  const limits =
-    ROOM_LIMITS[currentRoom];
-
-  if (!limits) {
-    return;
-  }
-
-  const targetDistance =
-    limits.startZ -
-    targetZ;
-
-  const cameraDistance =
-    limits.startZ -
-    camera.position.z;
-
-  const horizontalDistance =
-    Math.abs(targetX);
-
-  const cameraHorizontalDistance =
-    Math.abs(
-      camera.position.x
+    goToRoom(
+      targetRoom
     );
 
-  const stillInsideRoom =
-    targetDistance >
-      EXIT_THRESHOLD ||
-    cameraDistance >
-      EXIT_THRESHOLD ||
-    horizontalDistance >
-      EXIT_THRESHOLD ||
-    cameraHorizontalDistance >
-      EXIT_THRESHOLD;
-
-  if (stillInsideRoom) {
-    walkBackward();
-
-    return;
+    return true;
   }
 
-  returnToPreviousSpace();
+  return false;
 }
 
-// =====================================================
-// KEYBOARD
-// =====================================================
-
-function handleKeyDown(event) {
+function startClickStep(
+  direction = 1
+) {
   if (
-    event.key === "Escape"
+    isInteractionBlocked() ||
+    isTouching ||
+    isPinching
   ) {
-    handleBackAction();
-
     return;
   }
 
-  /*
-    Дополнительное удобство:
+  clickStepDirection =
+    direction >= 0 ? 1 : -1;
 
-    W / стрелка вверх — шаг вперёд.
-  */
+  clickStepYaw = yaw;
 
-  if (
-    event.key === "ArrowUp" ||
-    event.key.toLowerCase() === "w"
-  ) {
-    updateMouseCoordinates(
-      window.innerWidth / 2,
-      window.innerHeight / 2
-    );
+  clickStepRemaining =
+    CLICK_STEP_DISTANCE;
 
-    walkTowardPointer();
-
-    return;
-  }
-
-  if (
-    event.key === "ArrowDown" ||
-    event.key.toLowerCase() === "s"
-  ) {
-    walkBackward();
-  }
+  clickStepEndTime =
+    performance.now() +
+    CLICK_STEP_MAX_DURATION;
 }
 
-// =====================================================
-// WHEEL ZOOM
-// =====================================================
 
-function handleWheel(event) {
-  if (
-    isInterfaceElement(event.target)
-  ) {
-    return;
-  }
-
-  event.preventDefault();
-
-  camera.fov +=
-    event.deltaY *
-    0.012;
-
-  camera.fov =
-    THREE.MathUtils.clamp(
-      camera.fov,
-      MIN_FOV,
-      MAX_FOV
-    );
-
-  camera.updateProjectionMatrix();
-}
 
 // =====================================================
 // INTERACTIVE OBJECT SEARCH
 // =====================================================
 
-function getClickedInteractiveObject() {
+function getInteractiveObject() {
   const activeRoom =
     rooms[currentRoom];
 
@@ -1120,7 +1589,7 @@ function getClickedInteractiveObject() {
   }
 
   raycaster.setFromCamera(
-    mouse,
+    pointer,
     camera
   );
 
@@ -1129,37 +1598,6 @@ function getClickedInteractiveObject() {
       activeRoom.children,
       true
     );
-
-  if (
-    hits.length === 0
-  ) {
-    return null;
-  }
-
-  /*
-    Сначала ищем интерактивные данные
-    непосредственно на меше.
-  */
-
-  for (const hit of hits) {
-    const object =
-      hit.object;
-
-    const type =
-      object.userData.type;
-
-    if (
-      type === "door" ||
-      type === "ticketComputer" ||
-      type === "artwork"
-    ) {
-      return object;
-    }
-  }
-
-  /*
-    Затем проверяем родителей объекта.
-  */
 
   for (const hit of hits) {
     let object =
@@ -1188,206 +1626,239 @@ function getClickedInteractiveObject() {
   return null;
 }
 
+
 // =====================================================
-// TICKET HOVER HINT
+// MOVEMENT INPUT
 // =====================================================
 
-function getTicketHoverHint() {
-  let hint =
-    document.getElementById(
-      "ticket-hover-hint"
-    );
+function getMovementInput() {
+  let cameraForwardInput = 0;
+  let sideInput = 0;
+  let mouseForwardInput = 0;
+  let stepForwardInput = 0;
 
-  if (hint) {
-    return hint;
+  if (
+    pressedKeys.has("KeyW") ||
+    pressedKeys.has("ArrowUp")
+  ) {
+    cameraForwardInput += 1;
   }
 
-  hint =
-    document.createElement("div");
-
-  hint.id =
-    "ticket-hover-hint";
-
-  hint.innerHTML = `
-    <span class="ticket-hover-arrow">
-      →
-    </span>
-
-    <span>
-      BUY TICKET
-    </span>
-  `;
-
-  document.body.appendChild(hint);
-
-  return hint;
-}
-
-function showTicketHoverHint() {
-  const hint =
-    getTicketHoverHint();
-
-  const cursorX =
-    (mouse.x + 1) *
-    0.5 *
-    window.innerWidth;
-
-  const cursorY =
-    (1 - mouse.y) *
-    0.5 *
-    window.innerHeight;
-
-  hint.style.left =
-    `${cursorX + 18}px`;
-
-  hint.style.top =
-    `${cursorY}px`;
-
-  hint.classList.add(
-    "visible"
-  );
-}
-
-function hideTicketHoverHint() {
-  document
-    .getElementById(
-      "ticket-hover-hint"
-    )
-    ?.classList.remove(
-      "visible"
-    );
-}
-
-// =====================================================
-// TICKET REQUIRED NOTICE
-// =====================================================
-
-function getTicketRequiredNotice() {
-  let notice =
-    document.getElementById(
-      "museum-ticket-notice"
-    );
-
-  if (notice) {
-    return notice;
+  if (
+    pressedKeys.has("KeyS") ||
+    pressedKeys.has("ArrowDown")
+  ) {
+    cameraForwardInput -= 1;
   }
 
-  notice =
-    document.createElement("div");
+  if (
+    pressedKeys.has("KeyD") ||
+    pressedKeys.has("ArrowRight")
+  ) {
+    sideInput += 1;
+  }
 
-  notice.id =
-    "museum-ticket-notice";
+  if (
+    pressedKeys.has("KeyA") ||
+    pressedKeys.has("ArrowLeft")
+  ) {
+    sideInput -= 1;
+  }
 
-  notice.innerHTML = `
-    <span class="museum-ticket-notice-arrow">
-      ←
-    </span>
+  const leftHoldDuration =
+    performance.now() -
+    leftMouseDownTime;
 
-    <span>
-      PLEASE GET A TICKET FIRST
-    </span>
-  `;
+  const rightHoldDuration =
+    performance.now() -
+    rightMouseDownTime;
 
-  document.body.appendChild(
-    notice
-  );
+  const mouseWalkingForward =
+    leftMouseDown &&
+    leftHoldDuration >=
+      HOLD_TO_WALK_DELAY;
 
-  return notice;
+  const mouseWalkingBackward =
+    rightMouseDown &&
+    rightHoldDuration >=
+      HOLD_TO_WALK_DELAY;
+
+  if (mouseWalkingForward) {
+    mouseForwardInput += 1;
+  }
+
+  if (mouseWalkingBackward) {
+    mouseForwardInput -= 1;
+  }
+
+  const touchHoldDuration =
+    performance.now() -
+    touchStartTime;
+
+  if (
+    isTouching &&
+    !touchMoved &&
+    !isPinching &&
+    touchHoldDuration >=
+      MOBILE_HOLD_DELAY
+  ) {
+    mobileWalking =
+      true;
+  }
+
+  if (mobileWalking) {
+    cameraForwardInput += 1;
+  }
+
+  const clickStepActive =
+    clickStepRemaining > 0.001 &&
+    performance.now() <
+      clickStepEndTime;
+
+  if (clickStepActive) {
+    stepForwardInput =
+      clickStepDirection;
+  } else if (clickStepRemaining > 0) {
+    clickStepRemaining = 0;
+    clickStepEndTime = 0;
+    clickStepDirection = 1;
+  }
+
+  return {
+    cameraForwardInput:
+      THREE.MathUtils.clamp(
+        cameraForwardInput,
+        -1,
+        1
+      ),
+
+    mouseForwardInput:
+      THREE.MathUtils.clamp(
+        mouseForwardInput,
+        -1,
+        1
+      ),
+
+    stepForwardInput,
+
+    sideInput:
+      THREE.MathUtils.clamp(
+        sideInput,
+        -1,
+        1
+      ),
+
+    mouseWalkingBackward
+  };
 }
 
-function showTicketRequiredNotice() {
-  const notice =
-    getTicketRequiredNotice();
+// =====================================================
+// CAMERA LOOK UPDATE
+// =====================================================
 
-  notice.classList.add(
-    "visible"
-  );
+function updateCameraLook(
+  deltaTime
+) {
+  // Добавочный поворот клавишами.
+  // event.code уже используется выше, поэтому Q/E
+  // работают при любой языковой раскладке.
+  if (pressedKeys.has("KeyQ")) {
+    targetYaw +=
+      KEYBOARD_TURN_SPEED *
+      deltaTime;
+  }
 
-  window.clearTimeout(
-    ticketNoticeTimeout
-  );
+  if (pressedKeys.has("KeyE")) {
+    targetYaw -=
+      KEYBOARD_TURN_SPEED *
+      deltaTime;
+  }
 
-  ticketNoticeTimeout =
-    window.setTimeout(() => {
-      notice.classList.remove(
-        "visible"
+  const isWalkingNow =
+    leftMouseDown ||
+    rightMouseDown ||
+    mobileWalking ||
+    pressedKeys.has("KeyW") ||
+    pressedKeys.has("KeyS") ||
+    pressedKeys.has("ArrowUp") ||
+    pressedKeys.has("ArrowDown");
+
+  const verticalIdleTime =
+    performance.now() -
+    lastVerticalLookInputTime;
+
+  const autoLevelDelay =
+    isWalkingNow
+      ? AUTO_LEVEL_WALK_DELAY
+      : AUTO_LEVEL_IDLE_DELAY;
+
+  if (verticalIdleTime > autoLevelDelay) {
+    const autoLevelResponse =
+      isWalkingNow
+        ? AUTO_LEVEL_WALK_RESPONSE
+        : AUTO_LEVEL_IDLE_RESPONSE;
+
+    const levelFactor =
+      1 -
+      Math.exp(
+        -autoLevelResponse *
+        deltaTime
       );
-    }, 2200);
+
+    targetPitch =
+      THREE.MathUtils.lerp(
+        targetPitch,
+        0,
+        levelFactor
+      );
+  }
+
+  if (!isTouchDevice) {
+    /*
+      Horizontal look stays responsive. Vertical look has a natural
+      museum range and a delayed horizon assist instead of a hard lock.
+    */
+
+    const smoothingFactor =
+      1 -
+      Math.exp(
+        -LOOK_SMOOTHNESS *
+        deltaTime
+      );
+
+    yaw =
+      THREE.MathUtils.lerp(
+        yaw,
+        targetYaw,
+        smoothingFactor
+      );
+
+    pitch =
+      THREE.MathUtils.lerp(
+        pitch,
+        targetPitch,
+        smoothingFactor
+      );
+  }
+
+  camera.rotation.y =
+    yaw;
+
+  camera.rotation.x =
+    pitch;
+
+  camera.rotation.z =
+    0;
 }
 
-// =====================================================
-// CURSOR
-// =====================================================
-
-function updateCursor() {
-  if (isTouchDevice) {
-    return;
-  }
-
-  if (isTicketMenuOpen()) {
-    document.body.style.cursor =
-      "default";
-
-    hideTicketHoverHint();
-
-    return;
-  }
-
-  if (isArtworkOpen()) {
-    document.body.style.cursor =
-      "zoom-out";
-
-    hideTicketHoverHint();
-
-    return;
-  }
-
-  const object =
-    getClickedInteractiveObject();
-
-  if (
-    object?.userData.type ===
-    "ticketComputer"
-  ) {
-    document.body.style.cursor =
-      "pointer";
-
-    showTicketHoverHint();
-
-    return;
-  }
-
-  hideTicketHoverHint();
-
-  if (
-    object?.userData.type ===
-    "artwork"
-  ) {
-    document.body.style.cursor =
-      "zoom-in";
-
-    return;
-  }
-
-  if (
-    object?.userData.type ===
-    "door"
-  ) {
-    document.body.style.cursor =
-      "pointer";
-
-    return;
-  }
-
-  document.body.style.cursor =
-    "crosshair";
-}
 
 // =====================================================
-// WALK TOWARD POINTER
+// CAMERA MOVEMENT UPDATE
 // =====================================================
 
-function walkTowardPointer() {
+function updateCameraMovement(
+  deltaTime
+) {
   const limits =
     ROOM_LIMITS[currentRoom];
 
@@ -1395,40 +1866,178 @@ function walkTowardPointer() {
     return;
   }
 
-  raycaster.setFromCamera(
-    mouse,
-    camera
+  const {
+    cameraForwardInput,
+    mouseForwardInput,
+    stepForwardInput,
+    sideInput,
+    mouseWalkingBackward
+  } = getMovementInput();
+
+  const hasMovementInput =
+    Math.abs(
+      cameraForwardInput
+    ) > 0.001 ||
+    Math.abs(
+      mouseForwardInput
+    ) > 0.001 ||
+    Math.abs(
+      stepForwardInput
+    ) > 0.001 ||
+    Math.abs(
+      sideInput
+    ) > 0.001;
+
+  // Current camera direction: keyboard and mobile movement.
+  forwardVector.set(
+    -Math.sin(yaw),
+    0,
+    -Math.cos(yaw)
   );
 
-  movementDirection.copy(
-    raycaster.ray.direction
+  rightVector.set(
+    Math.cos(yaw),
+    0,
+    -Math.sin(yaw)
   );
 
-  movementDirection.y = 0;
+  movementVector.set(
+    0,
+    0,
+    0
+  );
 
+  movementVector.addScaledVector(
+    forwardVector,
+    cameraForwardInput
+  );
+
+  movementVector.addScaledVector(
+    rightVector,
+    sideInput
+  );
+
+  // Mouse-held walking is always purely forward/backward along yaw.
+  // No separate steering heading means no lateral drift or delayed pull.
   if (
-    movementDirection.lengthSq() <
-    0.0001
+    Math.abs(mouseForwardInput) >
+    0.001
   ) {
-    return;
+    movementVector.addScaledVector(
+      forwardVector,
+      mouseForwardInput
+    );
   }
 
-  movementDirection.normalize();
+  if (
+    Math.abs(stepForwardInput) >
+    0.001
+  ) {
+    const lockedStepForward =
+      new THREE.Vector3(
+        -Math.sin(clickStepYaw),
+        0,
+        -Math.cos(clickStepYaw)
+      );
 
-  const stepSize =
-    isTouchDevice
-      ? STEP_SIZE_MOBILE
-      : STEP_SIZE_DESKTOP;
+    movementVector.addScaledVector(
+      lockedStepForward,
+      stepForwardInput
+    );
+  }
+
+  if (
+    movementVector.lengthSq() > 1
+  ) {
+    movementVector.normalize();
+  }
+
+  const clickStepActive =
+    clickStepRemaining > 0.001 &&
+    performance.now() <
+      clickStepEndTime;
+
+  const hasManualMovementInput =
+    pressedKeys.has("KeyW") ||
+    pressedKeys.has("KeyS") ||
+    pressedKeys.has("KeyA") ||
+    pressedKeys.has("KeyD") ||
+    pressedKeys.has("ArrowUp") ||
+    pressedKeys.has("ArrowDown") ||
+    pressedKeys.has("ArrowLeft") ||
+    pressedKeys.has("ArrowRight") ||
+    leftMouseDown ||
+    rightMouseDown ||
+    mobileWalking;
+
+  let speed =
+    clickStepActive &&
+    !hasManualMovementInput
+      ? CLICK_STEP_SPEED
+      : isTouchDevice
+        ? MOBILE_WALK_SPEED
+        : WALK_SPEED;
+
+  if (
+    (pressedKeys.has("ShiftLeft") || pressedKeys.has("ShiftRight"))
+  ) {
+    speed =
+      FAST_WALK_SPEED;
+  }
+
+  const movementAmount =
+    Math.min(
+      1,
+      movementVector.length()
+    );
+
+  if (movementAmount > 0.0001) {
+    movementVector.normalize();
+
+    const desiredMoveSpeed =
+      speed *
+      movementAmount;
+
+    const accelerationFactor =
+      1 -
+      Math.exp(
+        -MOVEMENT_ACCELERATION *
+        deltaTime
+      );
+
+    currentMoveSpeed =
+      THREE.MathUtils.lerp(
+        currentMoveSpeed,
+        desiredMoveSpeed,
+        accelerationFactor
+      );
+
+    // Direction is always taken from this frame's input.
+    // Only speed is smoothed, so there is no sideways inertia.
+    currentVelocityX =
+      movementVector.x *
+      currentMoveSpeed;
+
+    currentVelocityZ =
+      movementVector.z *
+      currentMoveSpeed;
+  } else {
+    // Museum movement should stop exactly when the visitor stops
+    // pressing. This removes the slippery / drifting feeling.
+    currentMoveSpeed = 0;
+    currentVelocityX = 0;
+    currentVelocityZ = 0;
+  }
 
   let nextX =
-    targetX +
-    movementDirection.x *
-      stepSize;
+    camera.position.x +
+    currentVelocityX *
+      deltaTime;
 
   let nextZ =
-    targetZ +
-    movementDirection.z *
-      stepSize;
+    camera.position.z +
+    currentVelocityZ *
+      deltaTime;
 
   nextX =
     THREE.MathUtils.clamp(
@@ -1437,6 +2046,135 @@ function walkTowardPointer() {
       limits.maxX
     );
 
+  nextZ =
+    applyRoomZLimits(
+      nextZ,
+      currentVelocityZ,
+      limits
+    );
+
+  const previousX =
+    camera.position.x;
+
+  const previousZ =
+    camera.position.z;
+
+  camera.position.x =
+    nextX;
+
+  camera.position.z =
+    nextZ;
+
+  /*
+    Leaving a separate room now happens only after the visitor
+    physically walks backward to the entrance boundary. This works
+    with S / ArrowDown, a held secondary click, or a short backward step.
+  */
+  const walkingBackwardToExit =
+    pressedKeys.has("KeyS") ||
+    pressedKeys.has("ArrowDown") ||
+    mouseWalkingBackward ||
+    (
+      clickStepActive &&
+      clickStepDirection < 0
+    );
+
+  const isSeparateRoom =
+    currentRoom !== "entrance" &&
+    currentRoom !== "corridor";
+
+  const reachedRoomExit =
+    camera.position.z >=
+      limits.startZ - 0.08;
+
+  if (
+    walkingBackwardToExit &&
+    isSeparateRoom &&
+    reachedRoomExit &&
+    navigationHistory.length > 0
+  ) {
+    handleBackAction();
+
+    return;
+  }
+
+  if (clickStepRemaining > 0) {
+    const movedDistance =
+      Math.hypot(
+        camera.position.x -
+          previousX,
+        camera.position.z -
+          previousZ
+      );
+
+    clickStepRemaining =
+      Math.max(
+        0,
+        clickStepRemaining -
+          movedDistance
+      );
+
+    if (
+      clickStepRemaining <= 0.001 ||
+      performance.now() >=
+        clickStepEndTime
+    ) {
+      clickStepRemaining = 0;
+      clickStepEndTime = 0;
+      clickStepDirection = 1;
+    }
+  }
+
+  const isActuallyWalking =
+    Math.abs(
+      currentVelocityX
+    ) > 0.08 ||
+    Math.abs(
+      currentVelocityZ
+    ) > 0.08;
+
+  if (isActuallyWalking) {
+    walkTime +=
+      deltaTime;
+  }
+
+  const headBob =
+    isActuallyWalking
+      ? Math.sin(
+          walkTime *
+          HEAD_BOB_SPEED
+        ) *
+        HEAD_BOB_AMOUNT
+      : 0;
+
+  const desiredHeight =
+    getEyeHeightForCurrentRoom(
+      camera.position.z
+    ) +
+    headBob;
+
+  camera.position.y =
+    THREE.MathUtils.lerp(
+      camera.position.y,
+      desiredHeight,
+      1 -
+        Math.exp(
+          -10 *
+          deltaTime
+        )
+    );
+}
+
+
+// =====================================================
+// ROOM Z LIMITS / MAIN GATE
+// =====================================================
+
+function applyRoomZLimits(
+  nextZ,
+  velocityZ,
+  limits
+) {
   let effectiveEndZ =
     limits.endZ;
 
@@ -1445,35 +2183,31 @@ function walkTowardPointer() {
     !isMainGateOpen()
   ) {
     if (!hasTicket()) {
-      /*
-        Без билета останавливаем посетителя
-        примерно на середине лестницы.
-      */
       effectiveEndZ =
         TICKET_NOTICE_STOP_Z;
 
-      const reachedTicketNotice =
-        movementDirection.z < 0 &&
-        nextZ <= TICKET_NOTICE_STOP_Z;
+      const reachedTicketStop =
+        velocityZ < 0 &&
+        nextZ <=
+          TICKET_NOTICE_STOP_Z;
 
       if (
-        reachedTicketNotice &&
+        reachedTicketStop &&
         !ticketNoticeShownForApproach
       ) {
         showTicketRequiredNotice();
-        ticketNoticeShownForApproach = true;
+
+        ticketNoticeShownForApproach =
+          true;
       }
     } else {
-      /*
-        С билетом посетитель проходит дальше по лестнице.
-        Дверь открывается только при подходе к самой арке.
-      */
       effectiveEndZ =
         CLOSED_GATE_STOP_Z;
 
       const reachedClosedGate =
-        movementDirection.z < 0 &&
-        nextZ <= CLOSED_GATE_STOP_Z;
+        velocityZ < 0 &&
+        nextZ <=
+          CLOSED_GATE_STOP_Z;
 
       if (reachedClosedGate) {
         requestMainGateOpening();
@@ -1481,108 +2215,13 @@ function walkTowardPointer() {
     }
   }
 
-  nextZ =
-    THREE.MathUtils.clamp(
-      nextZ,
-      effectiveEndZ,
-      limits.startZ
-    );
-
-  targetX = nextX;
-  targetZ = nextZ;
-
-  targetY =
-    getEyeHeightForCurrentRoom(
-      targetZ
-    );
-
-  isWalking = true;
+  return THREE.MathUtils.clamp(
+    nextZ,
+    effectiveEndZ,
+    limits.startZ
+  );
 }
 
-// =====================================================
-// WALK BACKWARD
-// =====================================================
-
-function walkBackward() {
-  const limits =
-    ROOM_LIMITS[currentRoom];
-
-  if (!limits) {
-    return;
-  }
-
-  const exitDirection =
-    new THREE.Vector3(
-      -targetX,
-      0,
-      limits.startZ -
-        targetZ
-    );
-
-  const stepSize =
-    isTouchDevice
-      ? STEP_SIZE_MOBILE
-      : STEP_SIZE_DESKTOP;
-
-  if (
-    exitDirection.lengthSq() <
-    0.0001
-  ) {
-    targetX = 0;
-
-    targetZ =
-      limits.startZ;
-  } else {
-    exitDirection.normalize();
-
-    targetX +=
-      exitDirection.x *
-      stepSize;
-
-    targetZ +=
-      exitDirection.z *
-      stepSize;
-  }
-
-  targetX =
-    THREE.MathUtils.clamp(
-      targetX,
-      limits.minX,
-      limits.maxX
-    );
-
-  targetZ =
-    THREE.MathUtils.clamp(
-      targetZ,
-      limits.endZ,
-      limits.startZ
-    );
-
-  if (
-    Math.abs(targetX) <
-    stepSize
-  ) {
-    targetX = 0;
-  }
-
-  if (
-    Math.abs(
-      limits.startZ -
-      targetZ
-    ) <
-    stepSize
-  ) {
-    targetZ =
-      limits.startZ;
-  }
-
-  targetY =
-    getEyeHeightForCurrentRoom(
-      targetZ
-    );
-
-  isWalking = true;
-}
 
 // =====================================================
 // CAMERA HEIGHT
@@ -1650,31 +2289,23 @@ function getEyeHeightForCurrentRoom(
   );
 }
 
+
 // =====================================================
-// CONTINUOUS ENTRANCE ↔ CORRIDOR
+// ENTRANCE / CORRIDOR TRANSITION
 // =====================================================
 
 function updateContinuousEntranceCorridor() {
-  /*
-    Переключаем только активные границы движения.
-
-    Камера, её поворот и текущая позиция
-    вообще не меняются.
-  */
-
-  /*
-    После отхода от входа предупреждение можно
-    показать снова при следующем отдельном подходе.
-  */
   if (
     currentRoom === "entrance" &&
     camera.position.z > -8.5
   ) {
-    ticketNoticeShownForApproach = false;
+    ticketNoticeShownForApproach =
+      false;
   }
 
   if (hasTicket()) {
-    ticketNoticeShownForApproach = false;
+    ticketNoticeShownForApproach =
+      false;
 
     document
       .getElementById(
@@ -1692,12 +2323,8 @@ function updateContinuousEntranceCorridor() {
     camera.position.z <
       ENTRANCE_TO_CORRIDOR_Z
   ) {
-    currentRoom = "corridor";
-
-    targetY =
-      getBaseEyeHeight(
-        "corridor"
-      );
+    currentRoom =
+      "corridor";
 
     updateMobileBackButton();
 
@@ -1709,28 +2336,27 @@ function updateContinuousEntranceCorridor() {
     camera.position.z >
       CORRIDOR_TO_ENTRANCE_Z
   ) {
-    currentRoom = "entrance";
+    currentRoom =
+      "entrance";
 
-    targetZ =
+    camera.position.z =
       Math.max(
-        targetZ,
+        camera.position.z,
         CORRIDOR_TO_ENTRANCE_Z
-      );
-
-    targetY =
-      getEyeHeightForCurrentRoom(
-        targetZ
       );
 
     updateMobileBackButton();
   }
 }
 
+
 // =====================================================
 // ENTER ROOM
 // =====================================================
 
-function goToRoom(roomName) {
+function goToRoom(
+  roomName
+) {
   const room =
     rooms[roomName];
 
@@ -1760,26 +2386,20 @@ function goToRoom(roomName) {
     position:
       camera.position.clone(),
 
-    rotation: {
-      x: camera.rotation.x,
-      y: camera.rotation.y,
-      z: camera.rotation.z
-    },
+    yaw,
+    pitch,
 
-    targetX,
-    targetY,
-    targetZ,
+    targetYaw,
+    targetPitch,
 
-    lookX,
-    lookY,
-
-    mobileYaw,
-    mobilePitch
+    fov:
+      camera.fov
   });
 
   hideAllRooms();
 
-  room.visible = true;
+  room.visible =
+    true;
 
   currentRoom =
     roomName;
@@ -1795,32 +2415,59 @@ function goToRoom(roomName) {
     limits.startZ
   );
 
+  yaw = 0;
+  pitch = 0;
+
+  targetYaw =
+    yaw;
+
+  targetPitch =
+    pitch;
+
   camera.rotation.set(
-    0,
-    0,
+    pitch,
+    yaw,
     0
   );
 
-  targetX = 0;
-  targetY = eyeHeight;
-
-  targetZ =
-    limits.startZ;
-
-  lookX = 0;
-  lookY = 0;
-
-  mobileYaw = 0;
-  mobilePitch = 0;
-
-  stopWalking();
-
-  document.body.style.cursor =
-    "default";
+  clearInputState();
 
   hideTicketHoverHint();
   updateMobileBackButton();
+  broadcastNavigationState();
 }
+
+
+// =====================================================
+// BACK ACTION
+// =====================================================
+
+function handleBackAction() {
+  if (isArtistIntroOpen()) {
+    return;
+  }
+
+  if (isTicketMenuOpen()) {
+    closeTicketMenu();
+
+    return;
+  }
+
+  if (isArtworkOpen()) {
+    closeArtwork();
+
+    return;
+  }
+
+  if (
+    navigationHistory.length === 0
+  ) {
+    return;
+  }
+
+  returnToPreviousSpace();
+}
+
 
 // =====================================================
 // RETURN TO PREVIOUS SPACE
@@ -1845,25 +2492,24 @@ function returnToPreviousSpace() {
 
   hideAllRooms();
 
-  /*
-    Холл и коридор — одно непрерывное пространство.
-    После возвращения из гардероба, туалета или боковой комнаты
-    нужно снова показывать обе его части.
-  */
-
   if (
-    previousState.roomName === "entrance" ||
-    previousState.roomName === "corridor"
+    previousState.roomName ===
+      "entrance" ||
+    previousState.roomName ===
+      "corridor"
   ) {
     if (rooms.entrance) {
-      rooms.entrance.visible = true;
+      rooms.entrance.visible =
+        true;
     }
 
     if (rooms.corridor) {
-      rooms.corridor.visible = true;
+      rooms.corridor.visible =
+        true;
     }
   } else {
-    previousRoom.visible = true;
+    previousRoom.visible =
+      true;
   }
 
   currentRoom =
@@ -1873,66 +2519,275 @@ function returnToPreviousSpace() {
     previousState.position
   );
 
+  yaw =
+    previousState.yaw ??
+    0;
+
+  pitch = 0;
+
+  targetYaw =
+    previousState.targetYaw ??
+    yaw;
+
+  targetPitch = 0;
+
   camera.rotation.set(
-    previousState.rotation.x,
-    previousState.rotation.y,
-    previousState.rotation.z
+    pitch,
+    yaw,
+    0
   );
 
-  targetX =
-    previousState.targetX;
+  if (
+    Number.isFinite(
+      previousState.fov
+    )
+  ) {
+    camera.fov =
+      previousState.fov;
 
-  targetY =
-    previousState.targetY;
+    camera.updateProjectionMatrix();
+  }
 
-  targetZ =
-    previousState.targetZ;
-
-  lookX =
-    previousState.lookX ?? 0;
-
-  lookY =
-    previousState.lookY ?? 0;
-
-  mobileYaw =
-    previousState.mobileYaw ??
-    previousState.rotation.y;
-
-  mobilePitch =
-    previousState.mobilePitch ??
-    previousState.rotation.x;
-
-  stopWalking();
-
-  document.body.style.cursor =
-    "default";
+  clearInputState();
 
   hideTicketHoverHint();
   updateMobileBackButton();
+  broadcastNavigationState();
 }
 
+
 // =====================================================
-// HIDE ALL ROOMS
+// HIDE ROOMS
 // =====================================================
 
 function hideAllRooms() {
-  Object.values(rooms).forEach(
+  Object.values(
+    rooms
+  ).forEach(
     (room) => {
       if (room) {
-        room.visible = false;
+        room.visible =
+          false;
       }
     }
   );
 }
 
+
 // =====================================================
-// STOP WALKING
+// CURSOR
 // =====================================================
 
-function stopWalking() {
-  isWalking = false;
-  walkTime = 0;
+function updateCursor() {
+  if (isTouchDevice) {
+    return;
+  }
+
+  if (
+    isTicketMenuOpen() ||
+    isArtistIntroOpen() ||
+    isOnboardingVisible() ||
+    isInstructionsVisible()
+  ) {
+    document.body.style.cursor =
+      "default";
+
+    hideTicketHoverHint();
+
+    return;
+  }
+
+  if (isArtworkOpen()) {
+    document.body.style.cursor =
+      "zoom-out";
+
+    hideTicketHoverHint();
+
+    return;
+  }
+
+  const object =
+    getInteractiveObject();
+
+  if (
+    object?.userData.type ===
+    "ticketComputer"
+  ) {
+    document.body.style.cursor =
+      "pointer";
+
+    showTicketHoverHint();
+
+    return;
+  }
+
+  hideTicketHoverHint();
+
+  if (
+    object?.userData.type ===
+    "artwork"
+  ) {
+    document.body.style.cursor =
+      "zoom-in";
+
+    return;
+  }
+
+  if (
+    object?.userData.type ===
+    "door"
+  ) {
+    document.body.style.cursor =
+      "pointer";
+
+    return;
+  }
+
+  document.body.style.cursor =
+    leftMouseDown ||
+    rightMouseDown
+      ? "grabbing"
+      : "crosshair";
 }
+
+
+// =====================================================
+// TICKET HOVER HINT
+// =====================================================
+
+function getTicketHoverHint() {
+  let hint =
+    document.getElementById(
+      "ticket-hover-hint"
+    );
+
+  if (hint) {
+    return hint;
+  }
+
+  hint =
+    document.createElement(
+      "div"
+    );
+
+  hint.id =
+    "ticket-hover-hint";
+
+  hint.innerHTML = `
+    <span class="ticket-hover-arrow">
+      →
+    </span>
+
+    <span>
+      BUY TICKET
+    </span>
+  `;
+
+  document.body.appendChild(
+    hint
+  );
+
+  return hint;
+}
+
+function showTicketHoverHint() {
+  const hint =
+    getTicketHoverHint();
+
+  const cursorX =
+    (pointer.x + 1) *
+    0.5 *
+    window.innerWidth;
+
+  const cursorY =
+    (1 - pointer.y) *
+    0.5 *
+    window.innerHeight;
+
+  hint.style.left =
+    `${cursorX + 18}px`;
+
+  hint.style.top =
+    `${cursorY}px`;
+
+  hint.classList.add(
+    "visible"
+  );
+}
+
+function hideTicketHoverHint() {
+  document
+    .getElementById(
+      "ticket-hover-hint"
+    )
+    ?.classList.remove(
+      "visible"
+    );
+}
+
+
+// =====================================================
+// TICKET REQUIRED NOTICE
+// =====================================================
+
+function getTicketRequiredNotice() {
+  let notice =
+    document.getElementById(
+      "museum-ticket-notice"
+    );
+
+  if (notice) {
+    return notice;
+  }
+
+  notice =
+    document.createElement(
+      "div"
+    );
+
+  notice.id =
+    "museum-ticket-notice";
+
+  notice.innerHTML = `
+    <span class="museum-ticket-notice-arrow">
+      ←
+    </span>
+
+    <span>
+      PLEASE GET A TICKET FIRST
+    </span>
+  `;
+
+  document.body.appendChild(
+    notice
+  );
+
+  return notice;
+}
+
+function showTicketRequiredNotice() {
+  const notice =
+    getTicketRequiredNotice();
+
+  notice.classList.add(
+    "visible"
+  );
+
+  window.clearTimeout(
+    ticketNoticeTimeout
+  );
+
+  ticketNoticeTimeout =
+    window.setTimeout(
+      () => {
+        notice.classList.remove(
+          "visible"
+        );
+      },
+      2200
+    );
+}
+
 
 // =====================================================
 // MOBILE BACK BUTTON
@@ -2011,7 +2866,8 @@ function updateMobileBackButton() {
   }
 
   const shouldShow =
-    currentRoom !== "entrance" ||
+    currentRoom !==
+      "entrance" ||
     navigationHistory.length > 0;
 
   button.classList.toggle(
@@ -2020,8 +2876,9 @@ function updateMobileBackButton() {
   );
 }
 
+
 // =====================================================
-// INTERACTION STYLES
+// DYNAMIC STYLES
 // =====================================================
 
 function setupInteractionStyles() {
@@ -2129,9 +2986,6 @@ function setupInteractionStyles() {
         visibility 0.3s ease,
         transform 0.3s ease,
         background 0.2s ease;
-
-      -webkit-tap-highlight-color:
-        transparent;
     }
 
     #museum-mobile-back.museum-mobile-back-visible {
@@ -2178,7 +3032,8 @@ function setupInteractionStyles() {
       background:
         rgba(5, 8, 14, 0.84);
 
-      color: #eef7ff;
+      color:
+        #eef7ff;
 
       font-family:
         Arial,
@@ -2199,10 +3054,6 @@ function setupInteractionStyles() {
       transition:
         opacity 0.18s ease,
         visibility 0.18s ease;
-
-      box-shadow:
-        0 0 24px
-        rgba(90, 170, 255, 0.22);
 
       backdrop-filter:
         blur(8px);
@@ -2325,14 +3176,6 @@ function setupInteractionStyles() {
       #ticket-hover-hint {
         display: none;
       }
-
-      #museum-ticket-notice {
-        left: 50%;
-        right: auto;
-        top: 50%;
-        bottom: auto;
-        justify-content: center;
-      }
     }
 
     @media (pointer: fine) {
@@ -2347,118 +3190,53 @@ function setupInteractionStyles() {
   );
 }
 
+
 // =====================================================
-// UPDATE
+// MAIN UPDATE
 // =====================================================
 
 export function updateMovement() {
-  if (
-    isTicketMenuOpen() ||
-    isArtworkOpen()
-  ) {
-    isWalking = false;
+  const currentTime =
+    performance.now();
+
+  const deltaTime =
+    Math.min(
+      (
+        currentTime -
+        previousUpdateTime
+      ) / 1000,
+      0.05
+    );
+
+  previousUpdateTime =
+    currentTime;
+
+  if (isInteractionBlocked()) {
+    currentVelocityX =
+      0;
+
+    currentVelocityZ =
+      0;
+
+    currentMoveSpeed =
+      0;
+
+    targetPitch = 0;
+    pitch = 0;
+    camera.rotation.x = 0;
 
     return;
   }
 
-  const distanceX =
-    Math.abs(
-      targetX -
-      camera.position.x
-    );
+  updateCameraLook(
+    deltaTime
+  );
 
-  const distanceY =
-    Math.abs(
-      targetY -
-      camera.position.y
-    );
-
-  const distanceZ =
-    Math.abs(
-      targetZ -
-      camera.position.z
-    );
-
-  if (
-    distanceX < 0.03 &&
-    distanceY < 0.03 &&
-    distanceZ < 0.03
-  ) {
-    isWalking = false;
-  }
-
-  if (isWalking) {
-    walkTime += 0.18;
-  }
-
-  const headBob =
-    isWalking
-      ? Math.sin(
-          walkTime *
-          HEAD_BOB_SPEED
-        ) *
-        HEAD_BOB_AMOUNT
-      : 0;
-
-  camera.position.x +=
-    (
-      targetX -
-      camera.position.x
-    ) *
-    WALK_SMOOTHNESS;
-
-  camera.position.y +=
-    (
-      targetY +
-      headBob -
-      camera.position.y
-    ) *
-    WALK_SMOOTHNESS;
-
-  camera.position.z +=
-    (
-      targetZ -
-      camera.position.z
-    ) *
-    WALK_SMOOTHNESS;
+  updateCameraMovement(
+    deltaTime
+  );
 
   updateContinuousEntranceCorridor();
 
-  /*
-    На телефоне камера следует
-    за направлением свайпа.
-
-    На компьютере камера автоматически
-    следует за положением мышки.
-  */
-
-  const desiredYaw =
-    isTouchDevice
-      ? mobileYaw
-      : -lookX *
-        LOOK_HORIZONTAL;
-
-  const desiredPitch =
-    isTouchDevice
-      ? mobilePitch +
-        LOOK_OFFSET
-      : -lookY *
-        LOOK_VERTICAL +
-        LOOK_OFFSET;
-
-  camera.rotation.y +=
-    (
-      desiredYaw -
-      camera.rotation.y
-    ) *
-    LOOK_SMOOTHNESS;
-
-  camera.rotation.x +=
-    (
-      desiredPitch -
-      camera.rotation.x
-    ) *
-    LOOK_SMOOTHNESS;
-
-  camera.rotation.z = 0;
+  updateCursor();
 }

@@ -72,9 +72,16 @@
        CONTROL INSTRUCTIONS
   ================================================ -->
 
-  <div id="museum-instructions">
-
-    <div class="museum-instructions-window">
+  <div
+    id="museum-instructions"
+    aria-hidden="true"
+  >
+    <div
+      class="museum-instructions-window"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="museum-instructions-title"
+    >
 
       <button
         id="museum-instructions-close"
@@ -88,66 +95,78 @@
         CONTROLS
       </div>
 
-      <h2>
+      <h2 id="museum-instructions-title">
         How to explore
       </h2>
+
+      <p class="museum-instructions-intro">
+        You can explore the entire museum using
+        only your mouse. Keyboard controls are optional.
+      </p>
 
       <div class="museum-controls-list">
 
         <div class="museum-control-row">
-
           <span class="museum-control-key">
             MOVE MOUSE
           </span>
 
           <span>
-            Look around
+            Look around in any direction
           </span>
-
         </div>
 
-
         <div class="museum-control-row">
-
           <span class="museum-control-key">
-            LEFT CLICK
+            HOLD LEFT BUTTON
           </span>
 
           <span>
-            Walk forward or interact
+            Walk forward in the direction you are looking
           </span>
-
         </div>
 
+        <div class="museum-control-row">
+          <span class="museum-control-key">
+            CLICK OBJECT
+          </span>
+
+          <span>
+            Open artwork, enter a room or use a screen
+          </span>
+        </div>
 
         <div class="museum-control-row">
+          <span class="museum-control-key">
+            W A S D
+          </span>
 
+          <span>
+            Optional alternative to mouse movement
+          </span>
+        </div>
+
+        <div class="museum-control-row">
+          <span class="museum-control-key">
+            SHIFT
+          </span>
+
+          <span>
+            Walk faster
+          </span>
+        </div>
+
+        <div class="museum-control-row">
           <span class="museum-control-key">
             RIGHT CLICK
           </span>
 
           <span>
-            Go back
+            Return or go back
           </span>
-
         </div>
 
-
         <div class="museum-control-row">
-
-          <span class="museum-control-key">
-            BACKSPACE
-          </span>
-
-          <span>
-            Return to the previous room
-          </span>
-
-        </div>
-
-
-        <div class="museum-control-row">
-
           <span class="museum-control-key">
             SCROLL
           </span>
@@ -155,37 +174,59 @@
           <span>
             Zoom in and out
           </span>
-
         </div>
 
+        <div class="museum-control-row">
+          <span class="museum-control-key">
+            ESC
+          </span>
+
+          <span>
+            Close an open window
+          </span>
+        </div>
 
         <div class="museum-control-row museum-mobile-control">
-
           <span class="museum-control-key">
-            SWIPE
+            RIGHT SIDE SWIPE
           </span>
 
           <span>
             Look around on mobile
           </span>
-
         </div>
 
+        <div class="museum-control-row museum-mobile-control">
+          <span class="museum-control-key">
+            LEFT JOYSTICK
+          </span>
+
+          <span>
+            Move forward, backward and sideways
+          </span>
+        </div>
 
         <div class="museum-control-row museum-mobile-control">
-
           <span class="museum-control-key">
             TAP
           </span>
 
           <span>
-            Move or interact on mobile
+            Interact with artworks and doors
+          </span>
+        </div>
+
+        <div class="museum-control-row museum-mobile-control">
+          <span class="museum-control-key">
+            PINCH
           </span>
 
+          <span>
+            Zoom in and out
+          </span>
         </div>
 
       </div>
-
 
       <button
         id="museum-instructions-start"
@@ -195,7 +236,6 @@
       </button>
 
     </div>
-
   </div>
 
 

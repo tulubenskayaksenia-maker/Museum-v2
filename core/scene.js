@@ -15,7 +15,7 @@ scene.background = new THREE.Color(0x000000);
 // =====================================================
 
 export const camera = new THREE.PerspectiveCamera(
-  70, // Было 64
+  64, // Более естественная музейная перспектива
   window.innerWidth / window.innerHeight,
   0.1,
   1000
@@ -28,7 +28,7 @@ export const camera = new THREE.PerspectiveCamera(
 
 camera.position.set(
   0,
-  2.75,
+  2.4,
   18
 );
 

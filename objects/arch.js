@@ -210,6 +210,139 @@ export function createArchPortal({
   return portal;
 }
 
+
+// =====================================================
+// ЦЕЛЬНАЯ СТЕНА С НАСТОЯЩИМ АРОЧНЫМ ПРОЁМОМ
+//
+// В отличие от стены из трёх прямоугольников,
+// здесь отверстие вырезано непосредственно в геометрии.
+// Поэтому верх проёма повторяет форму арки и не выглядит
+// как квадратная дыра за декоративной рамой.
+// =====================================================
+
+export function createWallWithArchOpening({
+  wallWidth,
+  wallHeight,
+  wallDepth = 0.8,
+  openingWidth,
+  openingHeight,
+  material,
+  target = ""
+}) {
+  const wallShape =
+    new THREE.Shape();
+
+  wallShape.moveTo(
+    -wallWidth / 2,
+    0
+  );
+
+  wallShape.lineTo(
+    wallWidth / 2,
+    0
+  );
+
+  wallShape.lineTo(
+    wallWidth / 2,
+    wallHeight
+  );
+
+  wallShape.lineTo(
+    -wallWidth / 2,
+    wallHeight
+  );
+
+  wallShape.closePath();
+
+  const shoulderY =
+    openingHeight * 0.58;
+
+  const halfOpening =
+    openingWidth / 2;
+
+  // Hole path is intentionally clockwise.
+  const openingHole =
+    new THREE.Path();
+
+  openingHole.moveTo(
+    -halfOpening,
+    0
+  );
+
+  openingHole.lineTo(
+    -halfOpening,
+    shoulderY
+  );
+
+  openingHole.bezierCurveTo(
+    -halfOpening,
+    openingHeight * 0.78,
+    -openingWidth * 0.22,
+    openingHeight * 0.96,
+    0,
+    openingHeight
+  );
+
+  openingHole.bezierCurveTo(
+    openingWidth * 0.22,
+    openingHeight * 0.96,
+    halfOpening,
+    openingHeight * 0.78,
+    halfOpening,
+    shoulderY
+  );
+
+  openingHole.lineTo(
+    halfOpening,
+    0
+  );
+
+  openingHole.closePath();
+
+  wallShape.holes.push(
+    openingHole
+  );
+
+  const geometry =
+    new THREE.ExtrudeGeometry(
+      wallShape,
+      {
+        depth: wallDepth,
+        bevelEnabled: false,
+        curveSegments: 32
+      }
+    );
+
+  geometry.translate(
+    0,
+    0,
+    -wallDepth / 2
+  );
+
+  geometry.computeVertexNormals();
+
+  const wall =
+    new THREE.Mesh(
+      geometry,
+      material
+    );
+
+  wall.name =
+    "Wall With True Arch Opening";
+
+  wall.castShadow = true;
+  wall.receiveShadow = true;
+
+  if (target) {
+    markAsDoor(
+      wall,
+      target
+    );
+  }
+
+  return wall;
+}
+
 // =====================================================
 // ОБЪЁМНАЯ РАМКА С ОТВЕРСТИЕМ
 // =====================================================

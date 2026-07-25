@@ -41,13 +41,13 @@ import {
 } from "./rooms/corridorRightRoom01.js";
 
 import {
-  createCinemaRoom
-} from "./rooms/cinemaRoom.js";
+  createCorridorLeftRoom02,
+  updateCorridorLeftRoom02
+} from "./rooms/corridorLeftRoom02.js";
 
 import {
-  createSculptureRoom,
-  updateSculptureRoom
-} from "./rooms/sculptureRoom.js";
+  createCinemaRoom
+} from "./rooms/cinemaRoom.js";
 
 import {
   createCorridorSigns
@@ -71,12 +71,21 @@ import {
 } from "./ui/ticketMenu.js";
 
 import {
-  setupCinemaViewer
+  setupCinemaViewer,
+  setCinemaFilm
 } from "./ui/cinemaViewer.js";
 
 import {
   setupOnboarding
 } from "./ui/onboarding.js";
+
+import {
+  setupMobileControls
+} from "./ui/mobileControls.js";
+
+import {
+  setupDesktopMouseControls
+} from "./ui/desktopMouseControls.js";
 
 import {
   updateArtworkViewer
@@ -90,6 +99,24 @@ setupOnboarding();
 setupTicketMenu();
 setupCinemaViewer();
 setupSculptureViewer();
+setupMobileControls();
+setupDesktopMouseControls();
+
+setCinemaFilm({
+  title: "HIM",
+  artist: "Asaf Tal",
+  year: "2026",
+
+  warningTitle: "18+",
+
+  warningText:
+    `This film contains disturbing imagery and themes
+    that may not be suitable for all viewers.
+    Viewer discretion is advised.`,
+
+  videoUrl:
+    "./assets/videos/cinema-film.mp4"
+});
 
 // =====================================================
 // ENVIRONMENT
@@ -161,7 +188,7 @@ const room02 =
 // =====================================================
 
 const room03 =
-  createSculptureRoom();
+  createCorridorLeftRoom02();
 
 const room04 =
   createCinemaRoom();
@@ -213,7 +240,7 @@ function animate() {
 
   updateMovement();
   updateArtworkViewer();
-  updateSculptureRoom();
+  updateCorridorLeftRoom02();
   updateTicketBoothIndicator();
 
   renderer.render(

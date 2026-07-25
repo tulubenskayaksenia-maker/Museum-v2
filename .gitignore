@@ -1,0 +1,10 @@
+
+.DS_Store
+Archive 2.zip
+Archive 3.zip
+Archive 5.zip
+
+# Large exhibition videos — stored outside GitHub
+assets/videos/cinema-film.mp4
+assets/videos/room03/film.mp4
+assets/artworks/artworks/room02/video/*.mp4
