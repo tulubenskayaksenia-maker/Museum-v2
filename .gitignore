@@ -5,6 +5,5 @@ Archive 3.zip
 Archive 5.zip
 
 # Large exhibition videos — stored outside GitHub
-assets/videos/cinema-film.mp4
-assets/videos/room03/film.mp4
-assets/artworks/artworks/room02/video/*.mp4
+original-assets/
+prepare-web-assets.sh
