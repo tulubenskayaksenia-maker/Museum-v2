@@ -113,6 +113,17 @@ const pressedKeys =
 
 
 // =====================================================
+// DOOR DOUBLE-CLICK CONFIRMATION
+// =====================================================
+
+// Сколько мс даём на второй клик по той же двери.
+const DOOR_CONFIRM_WINDOW = 380;
+
+let pendingDoorObject = null;
+let pendingDoorClickTime = 0;
+
+
+// =====================================================
 // DESKTOP MOUSE
 // =====================================================
 
@@ -592,10 +603,30 @@ function isInterfaceElement(
         "#museum-instructions",
         "#museum-mobile-back",
         "#museum-help-button",
+        "#museum-mobile-controls",
         "#museum-desktop-mouse-controls"
       ].join(",")
     )
   );
+}
+
+/*
+  Из списка касаний убираем те, что лежат на джойстике / кнопках
+  интерфейса. Так можно держать джойстик одним пальцем и крутить
+  камеру другим — движение не примет это за pinch-to-zoom.
+*/
+function getWorldTouches(touchList) {
+  const touches = [];
+
+  for (let i = 0; i < touchList.length; i++) {
+    const touch = touchList[i];
+
+    if (!isInterfaceElement(touch.target)) {
+      touches.push(touch);
+    }
+  }
+
+  return touches;
 }
 
 function isOnboardingVisible() {
@@ -1035,6 +1066,12 @@ function clearInputState() {
   currentMoveSpeed =
     0;
 
+  pendingDoorObject =
+    null;
+
+  pendingDoorClickTime =
+    0;
+
 }
 
 
@@ -1127,16 +1164,20 @@ function handleTouchStart(event) {
     return;
   }
 
+  const worldTouches =
+    getWorldTouches(
+      event.touches
+    );
+
   if (
-    isInterfaceElement(
-      event.target
-    )
+    worldTouches.length === 0
   ) {
+    // все текущие касания — джойстик / интерфейс
     return;
   }
 
   if (
-    event.touches.length === 2
+    worldTouches.length === 2
   ) {
     isPinching =
       true;
@@ -1149,8 +1190,8 @@ function handleTouchStart(event) {
 
     pinchStartDistance =
       getTouchDistance(
-        event.touches[0],
-        event.touches[1]
+        worldTouches[0],
+        worldTouches[1]
       );
 
     pinchStartFov =
@@ -1162,13 +1203,13 @@ function handleTouchStart(event) {
   }
 
   if (
-    event.touches.length !== 1
+    worldTouches.length !== 1
   ) {
     return;
   }
 
   const touch =
-    event.touches[0];
+    worldTouches[0];
 
   isTouching =
     true;
@@ -1208,17 +1249,23 @@ function handleTouchStart(event) {
 // =====================================================
 
 function handleTouchMove(event) {
+  if (!isTouchDevice) {
+    return;
+  }
+
+  const worldTouches =
+    getWorldTouches(
+      event.touches
+    );
+
   if (
-    !isTouchDevice ||
-    isInterfaceElement(
-      event.target
-    )
+    worldTouches.length === 0
   ) {
     return;
   }
 
   if (
-    event.touches.length === 2
+    worldTouches.length === 2
   ) {
     if (!isPinching) {
       isPinching =
@@ -1229,8 +1276,8 @@ function handleTouchMove(event) {
 
       pinchStartDistance =
         getTouchDistance(
-          event.touches[0],
-          event.touches[1]
+          worldTouches[0],
+          worldTouches[1]
         );
 
       pinchStartFov =
@@ -1239,8 +1286,8 @@ function handleTouchMove(event) {
 
     const currentDistance =
       getTouchDistance(
-        event.touches[0],
-        event.touches[1]
+        worldTouches[0],
+        worldTouches[1]
       );
 
     if (
@@ -1271,13 +1318,13 @@ function handleTouchMove(event) {
 
   if (
     !isTouching ||
-    event.touches.length !== 1
+    worldTouches.length !== 1
   ) {
     return;
   }
 
   const touch =
-    event.touches[0];
+    worldTouches[0];
 
   const totalDistance =
     Math.hypot(
@@ -1350,18 +1397,26 @@ function handleTouchMove(event) {
 // =====================================================
 
 function handleTouchEnd(event) {
-  if (
-    !isTouchDevice ||
-    isInterfaceElement(
-      event.target
-    )
-  ) {
+  if (!isTouchDevice) {
     return;
   }
 
   if (
-    event.touches.length > 0
+    getWorldTouches(
+      event.touches
+    ).length > 0
   ) {
+    // ещё остался «игровой» палец
+    return;
+  }
+
+  const endedWorldTouch =
+    getWorldTouches(
+      event.changedTouches
+    )[0];
+
+  if (!endedWorldTouch) {
+    // убрали палец с джойстика — к движению не относится
     return;
   }
 
@@ -1388,7 +1443,7 @@ function handleTouchEnd(event) {
     touchStartTime;
 
   const changedTouch =
-    event.changedTouches[0];
+    endedWorldTouch;
 
   if (changedTouch) {
     updatePointerCoordinates(
@@ -1454,6 +1509,34 @@ function getTouchDistance(
 // PRIMARY ACTION
 // =====================================================
 
+/*
+  Первый клик по двери только «взводит» её; переход происходит
+  вторым кликом по ТОЙ ЖЕ двери в пределах DOOR_CONFIRM_WINDOW.
+*/
+function confirmDoorClick(doorObject) {
+  const now =
+    performance.now();
+
+  const isSameDoor =
+    pendingDoorObject === doorObject;
+
+  const withinWindow =
+    now - pendingDoorClickTime <=
+    DOOR_CONFIRM_WINDOW;
+
+  if (isSameDoor && withinWindow) {
+    pendingDoorObject = null;
+    pendingDoorClickTime = 0;
+
+    return true;
+  }
+
+  pendingDoorObject = doorObject;
+  pendingDoorClickTime = now;
+
+  return false;
+}
+
 function performPrimaryAction() {
   if (isTicketMenuOpen()) {
     return true;
@@ -1497,6 +1580,15 @@ function performPrimaryAction() {
       "door" &&
     interactiveObject.userData.target
   ) {
+    if (
+      !confirmDoorClick(
+        interactiveObject
+      )
+    ) {
+      // первый клик — дверь только «взведена», перехода нет
+      return true;
+    }
+
     const targetRoom =
       interactiveObject.userData.target;
 
