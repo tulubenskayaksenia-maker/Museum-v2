@@ -122,6 +122,10 @@ const DOOR_CONFIRM_WINDOW = 380;
 let pendingDoorObject = null;
 let pendingDoorClickTime = 0;
 
+// До этого момента тап на телефоне считается уже обработанным
+// другим модулем (например, вешалкой в гардеробе).
+let mobileInteractionConsumedUntil = 0;
+
 
 // =====================================================
 // DESKTOP MOUSE
@@ -569,6 +573,16 @@ export function setupMovement(
     handleTouchCancel,
     {
       passive: false
+    }
+  );
+
+  // Другие модули (например, гардероб) сообщают, что тап уже
+  // обработан ими — тогда движение не должно делать шаг вперёд.
+  window.addEventListener(
+    "museum-mobile-interaction-consumed",
+    () => {
+      mobileInteractionConsumedUntil =
+        performance.now() + 700;
     }
   );
 
@@ -1455,7 +1469,9 @@ function handleTouchEnd(event) {
   if (
     !touchMoved &&
     duration <
-      MOBILE_HOLD_DELAY
+      MOBILE_HOLD_DELAY &&
+    performance.now() >=
+      mobileInteractionConsumedUntil
   ) {
     const actionHandled =
       performPrimaryAction();

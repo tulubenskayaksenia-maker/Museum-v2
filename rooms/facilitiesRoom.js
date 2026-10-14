@@ -162,6 +162,12 @@ let selectedNumber = null;
 let interactionInstalled = false;
 let coatAnimationId = 0;
 
+let wardrobePointerId = null;
+let wardrobePointerStartX = 0;
+let wardrobePointerStartY = 0;
+let wardrobePointerMoved = false;
+let ignoreWardrobeClickUntil = 0;
+
 // =====================================================
 // СОЗДАНИЕ КОМНАТЫ
 // =====================================================
@@ -1769,8 +1775,26 @@ function installWardrobeInteraction() {
   interactionInstalled = true;
 
   renderer.domElement.addEventListener(
+    "pointerdown",
+    handleWardrobePointerDown,
+    true
+  );
+
+  renderer.domElement.addEventListener(
     "pointermove",
     handleWardrobePointerMove,
+    true
+  );
+
+  renderer.domElement.addEventListener(
+    "pointerup",
+    handleWardrobePointerUp,
+    true
+  );
+
+  renderer.domElement.addEventListener(
+    "pointercancel",
+    resetWardrobePointer,
     true
   );
 
@@ -1779,6 +1803,33 @@ function installWardrobeInteraction() {
     handleWardrobeClick,
     true
   );
+
+  window.addEventListener(
+    "museum-cloakroom-ticket-selected",
+    handleCloakroomSelectionRequest
+  );
+}
+
+function handleWardrobePointerDown(event) {
+  if (
+    event.pointerType === "mouse" ||
+    !wardrobeRoom ||
+    !wardrobeRoom.visible
+  ) {
+    return;
+  }
+
+  wardrobePointerId =
+    event.pointerId;
+
+  wardrobePointerStartX =
+    event.clientX;
+
+  wardrobePointerStartY =
+    event.clientY;
+
+  wardrobePointerMoved =
+    false;
 }
 
 function handleWardrobePointerMove(event) {
@@ -1789,28 +1840,120 @@ function handleWardrobePointerMove(event) {
     return;
   }
 
-  const hit =
-    getTicketIntersection(event);
+  if (
+    wardrobePointerId !== null &&
+    event.pointerId ===
+      wardrobePointerId
+  ) {
+    const distance =
+      Math.hypot(
+        event.clientX -
+          wardrobePointerStartX,
+        event.clientY -
+          wardrobePointerStartY
+      );
 
-  renderer.domElement.style.cursor =
-    hit
-      ? "pointer"
-      : "";
+    if (distance > 10) {
+      wardrobePointerMoved =
+        true;
+    }
+  }
+
+  if (event.pointerType === "mouse") {
+    const hit =
+      getTicketIntersection(event);
+
+    renderer.domElement.style.cursor =
+      hit
+        ? "pointer"
+        : "";
+  }
+}
+
+function handleWardrobePointerUp(event) {
+  if (
+    event.pointerType === "mouse" ||
+    wardrobePointerId === null ||
+    event.pointerId !==
+      wardrobePointerId
+  ) {
+    return;
+  }
+
+  const shouldActivate =
+    !wardrobePointerMoved;
+
+  resetWardrobePointer();
+
+  if (!shouldActivate) {
+    return;
+  }
+
+  const handled =
+    activateWardrobeTicket(event);
+
+  if (handled) {
+    ignoreWardrobeClickUntil =
+      performance.now() + 650;
+
+    window.dispatchEvent(
+      new CustomEvent(
+        "museum-mobile-interaction-consumed"
+      )
+    );
+  }
+}
+
+function resetWardrobePointer() {
+  wardrobePointerId = null;
+  wardrobePointerMoved = false;
 }
 
 function handleWardrobeClick(event) {
   if (
+    performance.now() <
+      ignoreWardrobeClickUntil
+  ) {
+    return;
+  }
+
+  activateWardrobeTicket(event);
+}
+
+function handleCloakroomSelectionRequest(
+  event
+) {
+  const number =
+    event.detail?.number;
+
+  if (
+    !wardrobeRoom ||
+    !wardrobeRoom.visible ||
+    !Number.isFinite(number) ||
+    !hangerSlots.has(number)
+  ) {
+    return;
+  }
+
+  ignoreWardrobeClickUntil =
+    performance.now() + 450;
+
+  selectCloakroomNumber(number);
+}
+
+function activateWardrobeTicket(event) {
+  if (
     !wardrobeRoom ||
     !wardrobeRoom.visible
   ) {
-    return;
+    return false;
   }
 
   const hit =
     getTicketIntersection(event);
 
   if (!hit) {
-    return;
+    return false;
   }
 
   const number =
@@ -1819,19 +1962,20 @@ function handleWardrobeClick(event) {
     );
 
   if (!number) {
-    return;
+    return false;
   }
 
   /*
-    Не разрешаем movement.js одновременно
-    интерпретировать клик как движение.
+    Do not let movement.js interpret the same
+    interaction as a step forward.
   */
-
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
 
   selectCloakroomNumber(number);
+
+  return true;
 }
 
 function getTicketIntersection(event) {
