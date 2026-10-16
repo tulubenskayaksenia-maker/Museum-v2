@@ -5,6 +5,8 @@ import {
   renderer
 } from "../core/scene.js";
 
+import { getAimPoint } from "../core/aim.js";
+
 import {
   floorMaterial,
   wallMaterial,
@@ -1989,10 +1991,14 @@ function getTicketIntersection(event) {
     renderer.domElement
       .getBoundingClientRect();
 
+  // При захвате мыши целимся в центр экрана (см. core/aim.js)
+  const aim =
+    getAimPoint(event);
+
   pointer.x =
     (
       (
-        event.clientX -
+        aim.x -
         bounds.left
       ) /
       bounds.width
@@ -2001,7 +2007,7 @@ function getTicketIntersection(event) {
   pointer.y =
     -(
       (
-        event.clientY -
+        aim.y -
         bounds.top
       ) /
       bounds.height

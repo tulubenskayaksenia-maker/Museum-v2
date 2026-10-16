@@ -4,6 +4,8 @@ import {
   camera
 } from "../core/scene.js";
 
+import { getAimPoint } from "../core/aim.js";
+
 import {
   openCinemaViewer,
   setCinemaFilm
@@ -982,15 +984,19 @@ function setupScreenInteraction({
         return;
       }
 
+      // При захвате мыши целимся в центр экрана (см. core/aim.js)
+      const aim =
+        getAimPoint(event);
+
       pointer.x =
         (
-          event.clientX /
+          aim.x /
           window.innerWidth
         ) * 2 - 1;
 
       pointer.y =
         -(
-          event.clientY /
+          aim.y /
           window.innerHeight
         ) * 2 + 1;
 

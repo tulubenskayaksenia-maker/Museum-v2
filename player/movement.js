@@ -1,7 +1,12 @@
 import {
   THREE,
-  camera
+  camera,
+  renderer
 } from "../core/scene.js";
+
+import {
+  USE_POINTER_LOCK
+} from "../core/aim.js";
 
 import {
   openTicketMenu,
@@ -117,7 +122,9 @@ const pressedKeys =
 // =====================================================
 
 // Сколько мс даём на второй клик по той же двери.
-const DOOR_CONFIRM_WINDOW = 380;
+// На телефоне даём чуть больше времени на второй тап.
+const DOOR_CONFIRM_WINDOW =
+  isTouchDevice ? 650 : 450;
 
 let pendingDoorObject = null;
 let pendingDoorClickTime = 0;
@@ -125,6 +132,20 @@ let pendingDoorClickTime = 0;
 // До этого момента тап на телефоне считается уже обработанным
 // другим модулем (например, вешалкой в гардеробе).
 let mobileInteractionConsumedUntil = 0;
+
+// Захват мыши (pointer lock) — см. core/aim.js
+let pointerLockErrors = 0;
+let pointerLockFailed = false;
+
+// Лёгкая оптимизация: рейкаст «что под курсором» не каждый кадр
+let lastCursorRaycastTime = 0;
+let lastInterfaceUpdateTime = 0;
+
+let doorHintTimeout = null;
+
+// Переиспользуемый вектор, чтобы не создавать новый каждый кадр
+const lockedStepVector =
+  new THREE.Vector3();
 
 
 // =====================================================
@@ -282,6 +303,33 @@ const MIN_PITCH =
 
 const MAX_PITCH =
   THREE.MathUtils.degToRad(50);
+
+/*
+  На телефоне взгляд вверх/вниз ограничен сильнее и сам возвращается
+  к горизонту, чтобы камера не «залипала» в потолке или небе.
+*/
+const MOBILE_MIN_PITCH =
+  THREE.MathUtils.degToRad(-40);
+
+const MOBILE_MAX_PITCH =
+  THREE.MathUtils.degToRad(40);
+
+const AUTO_LEVEL_MOBILE_IDLE_DELAY =
+  1300;
+
+const AUTO_LEVEL_MOBILE_IDLE_RESPONSE =
+  2.4;
+
+/*
+  Телефон: идти можно только джойстиком.
+  Если когда-нибудь захочешь вернуть старое поведение —
+  поставь true.
+*/
+const MOBILE_HOLD_TO_WALK = false;
+const MOBILE_TAP_STEP = false;
+
+// Как часто (мс) проверять, на что наведён курсор
+const CURSOR_RAYCAST_INTERVAL = 80;
 
 
 // =====================================================
@@ -586,6 +634,18 @@ export function setupMovement(
     }
   );
 
+  document.addEventListener(
+    "pointerlockchange",
+    handlePointerLockChange
+  );
+
+  document.addEventListener(
+    "pointerlockerror",
+    handlePointerLockError
+  );
+
+  setupAimStyles();
+
   if (isTouchDevice) {
     createMobileBackButton();
   }
@@ -642,6 +702,463 @@ function getWorldTouches(touchList) {
 
   return touches;
 }
+
+// =====================================================
+// MOUSE CAPTURE (POINTER LOCK) — компьютер
+// =====================================================
+
+const OVERLAY_OPEN_SELECTOR = [
+  "#museum-onboarding.visible",
+  "#museum-instructions.visible",
+  "#ticket-menu.visible",
+  "#artist-intro:not([hidden])",
+  "#cinema-viewer:not([hidden])",
+  "#sculpture-viewer.visible"
+].join(",");
+
+function isPointerLocked() {
+  return Boolean(
+    document.pointerLockElement
+  );
+}
+
+/*
+  Любое окно поверх сцены (билет, кино, видео, интро художника...).
+  Пока оно открыто, мышь должна быть свободна.
+*/
+function isAnyOverlayOpen() {
+  if (
+    isInteractionBlocked() ||
+    isArtistIntroOpen()
+  ) {
+    return true;
+  }
+
+  if (
+    document.querySelector(
+      OVERLAY_OPEN_SELECTOR
+    )
+  ) {
+    return true;
+  }
+
+  for (const id of [
+    "room02-video-overlay",
+    "room03-video-overlay"
+  ]) {
+    const element =
+      document.getElementById(id);
+
+    if (
+      element &&
+      element.style.display ===
+        "flex"
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function canLookWithMouse() {
+  if (
+    !USE_POINTER_LOCK ||
+    pointerLockFailed
+  ) {
+    return true;
+  }
+
+  return isPointerLocked();
+}
+
+function shouldCaptureMouse(event) {
+  return (
+    USE_POINTER_LOCK &&
+    !pointerLockFailed &&
+    !isTouchDevice &&
+    !isPointerLocked() &&
+    !isInterfaceElement(
+      event.target
+    ) &&
+    !isAnyOverlayOpen()
+  );
+}
+
+function requestMouseCapture() {
+  if (
+    !USE_POINTER_LOCK ||
+    pointerLockFailed ||
+    isTouchDevice ||
+    isPointerLocked()
+  ) {
+    return;
+  }
+
+  try {
+    const result =
+      renderer.domElement
+        .requestPointerLock();
+
+    // В новых браузерах это Promise — ошибку ловим молча,
+    // её обработает pointerlockerror.
+    if (
+      result &&
+      typeof result.catch ===
+        "function"
+    ) {
+      result.catch(() => {});
+    }
+  } catch (error) {
+    handlePointerLockError();
+  }
+}
+
+function handlePointerLockChange() {
+  clearInputState();
+
+  if (isPointerLocked()) {
+    pointerLockErrors = 0;
+
+    // При захвате мыши целимся в центр экрана.
+    updatePointerCoordinates(
+      window.innerWidth / 2,
+      window.innerHeight / 2
+    );
+  }
+
+  lastInterfaceUpdateTime = 0;
+  lastCursorRaycastTime = 0;
+
+  updateInterfaceHints(
+    performance.now()
+  );
+}
+
+function handlePointerLockError() {
+  pointerLockErrors += 1;
+
+  // Один-два сбоя бывают при быстром повторном клике после Esc.
+  // Если мышь не захватывается совсем — возвращаем старое
+  // управление со свободным курсором.
+  if (pointerLockErrors >= 3) {
+    pointerLockFailed = true;
+  }
+
+  lastInterfaceUpdateTime = 0;
+}
+
+
+// =====================================================
+// AIM CROSSHAIR / HINTS
+// =====================================================
+
+function getOrCreateElement(
+  id,
+  className,
+  text = ""
+) {
+  let element =
+    document.getElementById(id);
+
+  if (element) {
+    return element;
+  }
+
+  element =
+    document.createElement("div");
+
+  element.id = id;
+
+  if (className) {
+    element.className = className;
+  }
+
+  element.textContent = text;
+
+  document.body.appendChild(
+    element
+  );
+
+  return element;
+}
+
+function setupAimStyles() {
+  if (
+    document.getElementById(
+      "museum-aim-styles"
+    )
+  ) {
+    return;
+  }
+
+  const style =
+    document.createElement("style");
+
+  style.id =
+    "museum-aim-styles";
+
+  style.textContent = `
+    #museum-crosshair {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      z-index: 8000;
+
+      width: 8px;
+      height: 8px;
+      margin: -4px 0 0 -4px;
+
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+
+      opacity: 0;
+      pointer-events: none;
+
+      transition:
+        opacity 0.2s ease,
+        transform 0.15s ease,
+        background 0.15s ease;
+    }
+
+    #museum-crosshair.visible {
+      opacity: 1;
+    }
+
+    #museum-crosshair.active {
+      transform: scale(2.4);
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.95);
+    }
+
+    #museum-lock-hint,
+    #museum-door-hint {
+      position: fixed;
+      z-index: 9000;
+
+      padding: 10px 16px;
+
+      border: 1px solid rgba(255, 255, 255, 0.34);
+      background: rgba(5, 5, 5, 0.66);
+      color: rgba(255, 255, 255, 0.94);
+
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      white-space: nowrap;
+
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+
+      transition:
+        opacity 0.2s ease,
+        visibility 0.2s ease,
+        background 0.15s ease,
+        border-color 0.15s ease;
+    }
+
+    #museum-lock-hint {
+      left: 50%;
+      top: 24px;
+      transform: translateX(-50%);
+    }
+
+    #museum-door-hint {
+      left: 0;
+      top: 0;
+      transform: translate(-50%, 0);
+    }
+
+    #museum-lock-hint.visible,
+    #museum-door-hint.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #museum-door-hint.armed {
+      border-color: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    @media (pointer: coarse) {
+      #museum-crosshair,
+      #museum-lock-hint {
+        display: none;
+      }
+    }
+  `;
+
+  document.head.appendChild(
+    style
+  );
+}
+
+function setCrosshairActive(active) {
+  if (isTouchDevice) {
+    return;
+  }
+
+  getOrCreateElement(
+    "museum-crosshair"
+  ).classList.toggle(
+    "active",
+    active
+  );
+}
+
+/*
+  Прицел и подсказка «CLICK TO LOOK AROUND».
+  Обновляем не каждый кадр, а раз в 100 мс.
+*/
+function updateInterfaceHints(now) {
+  if (
+    isTouchDevice ||
+    now - lastInterfaceUpdateTime < 100
+  ) {
+    return;
+  }
+
+  lastInterfaceUpdateTime = now;
+
+  const locked =
+    isPointerLocked();
+
+  const overlayOpen =
+    isAnyOverlayOpen();
+
+  getOrCreateElement(
+    "museum-crosshair"
+  ).classList.toggle(
+    "visible",
+    locked && !overlayOpen
+  );
+
+  getOrCreateElement(
+    "museum-lock-hint",
+    "",
+    "CLICK TO LOOK AROUND · ESC TO RELEASE"
+  ).classList.toggle(
+    "visible",
+    USE_POINTER_LOCK &&
+      !pointerLockFailed &&
+      !locked &&
+      !overlayOpen
+  );
+}
+
+
+// =====================================================
+// DOOR HINT
+// =====================================================
+
+/*
+  Выход ли это из комнаты (а не вход в неё):
+  дверь внутри отдельной комнаты, ведущая в коридор.
+*/
+function isExitDoor(doorObject) {
+  return (
+    currentRoom !== "entrance" &&
+    currentRoom !== "corridor" &&
+    doorObject?.userData.target ===
+      "corridor"
+  );
+}
+
+function positionDoorHint() {
+  const hint =
+    getOrCreateElement(
+      "museum-door-hint"
+    );
+
+  hint.style.left =
+    `${(pointer.x + 1) * 0.5 *
+      window.innerWidth}px`;
+
+  hint.style.top =
+    `${(1 - pointer.y) * 0.5 *
+      window.innerHeight + 28}px`;
+
+  return hint;
+}
+
+// Компьютер: подсказка, пока прицел/курсор наведён на дверь
+function showDoorHint(doorObject) {
+  const hint =
+    positionDoorHint();
+
+  hint.textContent =
+    isExitDoor(doorObject)
+      ? "DOUBLE CLICK TO LEAVE"
+      : "DOUBLE CLICK TO ENTER";
+
+  hint.classList.add(
+    "visible"
+  );
+}
+
+function hideDoorHint() {
+  window.clearTimeout(
+    doorHintTimeout
+  );
+
+  const hint =
+    document.getElementById(
+      "museum-door-hint"
+    );
+
+  hint?.classList.remove(
+    "visible",
+    "armed"
+  );
+}
+
+// Первый клик/тап по двери: подсвечиваем, что он засчитан
+function flashDoorHint(doorObject) {
+  const hint =
+    positionDoorHint();
+
+  const action =
+    isExitDoor(doorObject)
+      ? "LEAVE"
+      : "ENTER";
+
+  hint.textContent =
+    isTouchDevice
+      ? `TAP AGAIN TO ${action}`
+      : `DOUBLE CLICK TO ${action}`;
+
+  hint.classList.add(
+    "visible",
+    "armed"
+  );
+
+  window.clearTimeout(
+    doorHintTimeout
+  );
+
+  doorHintTimeout =
+    window.setTimeout(
+      () => {
+        hint.classList.remove(
+          "armed"
+        );
+
+        // На телефоне наведения нет — подсказка исчезает сама.
+        if (isTouchDevice) {
+          hint.classList.remove(
+            "visible"
+          );
+        }
+      },
+      DOOR_CONFIRM_WINDOW + 250
+    );
+}
+
 
 function isOnboardingVisible() {
   return (
@@ -709,10 +1226,13 @@ function handleMouseMove(event) {
     return;
   }
 
-  updatePointerCoordinates(
-    event.clientX,
-    event.clientY
-  );
+  // Когда мышь захвачена, прицел всегда в центре экрана.
+  if (!isPointerLocked()) {
+    updatePointerCoordinates(
+      event.clientX,
+      event.clientY
+    );
+  }
 
   /*
     movementX и movementY существуют
@@ -723,6 +1243,7 @@ function handleMouseMove(event) {
   */
 
   if (
+    canLookWithMouse() &&
     !isInteractionBlocked() &&
     !isInterfaceElement(event.target)
   ) {
@@ -848,7 +1369,22 @@ function handleMouseDown(event) {
     event.preventDefault();
     clearInputState();
     closeArtwork();
+
+    // Картина закрылась — сразу снова захватываем мышь.
+    requestMouseCapture();
+
     updateCursor();
+    return;
+  }
+
+  // Первый клик по сцене только захватывает мышь
+  // (дальше можно крутить камеру и кликать по прицелу).
+  if (
+    forwardButton &&
+    shouldCaptureMouse(event)
+  ) {
+    event.preventDefault();
+    requestMouseCapture();
     return;
   }
 
@@ -1086,6 +1622,7 @@ function clearInputState() {
   pendingDoorClickTime =
     0;
 
+  hideDoorHint();
 }
 
 
@@ -1380,9 +1917,16 @@ function handleTouchMove(event) {
     pitch =
       THREE.MathUtils.clamp(
         pitch,
-        MIN_PITCH,
-        MAX_PITCH
+        MOBILE_MIN_PITCH,
+        MOBILE_MAX_PITCH
       );
+
+    // Запоминаем момент последнего взгляда вверх/вниз,
+    // чтобы потом камера сама вернулась к горизонту.
+    if (Math.abs(deltaY) > 0) {
+      lastVerticalLookInputTime =
+        performance.now();
+    }
 
     targetYaw =
       yaw;
@@ -1476,7 +2020,10 @@ function handleTouchEnd(event) {
     const actionHandled =
       performPrimaryAction();
 
-    if (!actionHandled) {
+    if (
+      !actionHandled &&
+      MOBILE_TAP_STEP
+    ) {
       startClickStep();
     }
   }
@@ -1602,11 +2149,41 @@ function performPrimaryAction() {
       )
     ) {
       // первый клик — дверь только «взведена», перехода нет
+      flashDoorHint(
+        interactiveObject
+      );
+
       return true;
     }
 
+    hideDoorHint();
+
     const targetRoom =
       interactiveObject.userData.target;
+
+    /*
+      Выход из комнаты = возврат на шаг назад.
+      Так игрок оказывается в коридоре прямо у той двери,
+      из которой вышел, а история переходов не разрастается.
+    */
+    if (isExitDoor(interactiveObject)) {
+      const previousState =
+        navigationHistory[
+          navigationHistory.length - 1
+        ];
+
+      if (
+        previousState &&
+        previousState.roomName ===
+          "corridor"
+      ) {
+        clearInputState();
+
+        returnToPreviousSpace();
+
+        return true;
+      }
+    }
 
     if (
       targetRoom === "corridor" &&
@@ -1804,6 +2381,7 @@ function getMovementInput() {
     touchStartTime;
 
   if (
+    MOBILE_HOLD_TO_WALK &&
     isTouching &&
     !touchMoved &&
     !isPinching &&
@@ -1898,13 +2476,17 @@ function updateCameraLook(
   const autoLevelDelay =
     isWalkingNow
       ? AUTO_LEVEL_WALK_DELAY
-      : AUTO_LEVEL_IDLE_DELAY;
+      : isTouchDevice
+        ? AUTO_LEVEL_MOBILE_IDLE_DELAY
+        : AUTO_LEVEL_IDLE_DELAY;
 
   if (verticalIdleTime > autoLevelDelay) {
     const autoLevelResponse =
       isWalkingNow
         ? AUTO_LEVEL_WALK_RESPONSE
-        : AUTO_LEVEL_IDLE_RESPONSE;
+        : isTouchDevice
+          ? AUTO_LEVEL_MOBILE_IDLE_RESPONSE
+          : AUTO_LEVEL_IDLE_RESPONSE;
 
     const levelFactor =
       1 -
@@ -1921,33 +2503,31 @@ function updateCameraLook(
       );
   }
 
-  if (!isTouchDevice) {
-    /*
-      Horizontal look stays responsive. Vertical look has a natural
-      museum range and a delayed horizon assist instead of a hard lock.
-    */
+  /*
+    Работает и на компьютере, и на телефоне.
+    Горизонтальный поворот остаётся быстрым, а взгляд вверх/вниз
+    через небольшую паузу плавно возвращается к горизонту.
+  */
+  const smoothingFactor =
+    1 -
+    Math.exp(
+      -LOOK_SMOOTHNESS *
+      deltaTime
+    );
 
-    const smoothingFactor =
-      1 -
-      Math.exp(
-        -LOOK_SMOOTHNESS *
-        deltaTime
-      );
+  yaw =
+    THREE.MathUtils.lerp(
+      yaw,
+      targetYaw,
+      smoothingFactor
+    );
 
-    yaw =
-      THREE.MathUtils.lerp(
-        yaw,
-        targetYaw,
-        smoothingFactor
-      );
-
-    pitch =
-      THREE.MathUtils.lerp(
-        pitch,
-        targetPitch,
-        smoothingFactor
-      );
-  }
+  pitch =
+    THREE.MathUtils.lerp(
+      pitch,
+      targetPitch,
+      smoothingFactor
+    );
 
   camera.rotation.y =
     yaw;
@@ -2041,15 +2621,14 @@ function updateCameraMovement(
     Math.abs(stepForwardInput) >
     0.001
   ) {
-    const lockedStepForward =
-      new THREE.Vector3(
-        -Math.sin(clickStepYaw),
-        0,
-        -Math.cos(clickStepYaw)
-      );
+    lockedStepVector.set(
+      -Math.sin(clickStepYaw),
+      0,
+      -Math.cos(clickStepYaw)
+    );
 
     movementVector.addScaledVector(
-      lockedStepForward,
+      lockedStepVector,
       stepForwardInput
     );
   }
@@ -2701,6 +3280,8 @@ function updateCursor() {
       "default";
 
     hideTicketHoverHint();
+    hideDoorHint();
+    setCrosshairActive(false);
 
     return;
   }
@@ -2710,20 +3291,44 @@ function updateCursor() {
       "zoom-out";
 
     hideTicketHoverHint();
+    hideDoorHint();
+    setCrosshairActive(false);
 
     return;
   }
 
+  /*
+    Рейкаст по всей комнате — дорогая операция.
+    Делаем его не чаще, чем раз в CURSOR_RAYCAST_INTERVAL мс,
+    а не 60 раз в секунду.
+  */
+  const now =
+    performance.now();
+
+  if (
+    now - lastCursorRaycastTime <
+    CURSOR_RAYCAST_INTERVAL
+  ) {
+    return;
+  }
+
+  lastCursorRaycastTime = now;
+
   const object =
     getInteractiveObject();
 
-  if (
-    object?.userData.type ===
-    "ticketComputer"
-  ) {
+  const type =
+    object?.userData.type;
+
+  setCrosshairActive(
+    Boolean(type)
+  );
+
+  if (type === "ticketComputer") {
     document.body.style.cursor =
       "pointer";
 
+    hideDoorHint();
     showTicketHoverHint();
 
     return;
@@ -2732,19 +3337,27 @@ function updateCursor() {
   hideTicketHoverHint();
 
   if (
-    object?.userData.type ===
-    "artwork"
+    type === "door" &&
+    object.userData.target
   ) {
+    document.body.style.cursor =
+      "pointer";
+
+    showDoorHint(object);
+
+    return;
+  }
+
+  hideDoorHint();
+
+  if (type === "artwork") {
     document.body.style.cursor =
       "zoom-in";
 
     return;
   }
 
-  if (
-    object?.userData.type ===
-    "door"
-  ) {
+  if (type === "door") {
     document.body.style.cursor =
       "pointer";
 
@@ -3318,6 +3931,19 @@ export function updateMovement() {
 
   previousUpdateTime =
     currentTime;
+
+  // Окно поверх сцены открылось — отпускаем мышь,
+  // чтобы можно было кликать по интерфейсу.
+  if (
+    isPointerLocked() &&
+    isAnyOverlayOpen()
+  ) {
+    document.exitPointerLock();
+  }
+
+  updateInterfaceHints(
+    currentTime
+  );
 
   if (isInteractionBlocked()) {
     currentVelocityX =

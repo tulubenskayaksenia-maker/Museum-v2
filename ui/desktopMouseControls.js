@@ -93,7 +93,7 @@ function createGuide() {
 
       <div class="museum-desktop-control-item" data-mouse-action="open">
         <strong>CLICK OBJECT</strong>
-        <span>OPEN</span>
+        <span>OPEN · DOUBLE-CLICK A DOOR</span>
       </div>
 
       <div class="museum-desktop-control-separator"></div>

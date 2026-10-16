@@ -5,6 +5,8 @@ import {
   renderer
 } from "../core/scene.js";
 
+import { getAimPoint } from "../core/aim.js";
+
 import {
   floorMaterial,
   wallMaterial
@@ -771,10 +773,14 @@ export function createCorridorRightRoom01() {
     const rect =
       renderer.domElement.getBoundingClientRect();
 
+    // При захвате мыши целимся в центр экрана (см. core/aim.js)
+    const aim =
+      getAimPoint(event);
+
     pointer.x =
       (
         (
-          event.clientX -
+          aim.x -
           rect.left
         ) /
         rect.width
@@ -783,7 +789,7 @@ export function createCorridorRightRoom01() {
     pointer.y =
       -(
         (
-          event.clientY -
+          aim.y -
           rect.top
         ) /
         rect.height
