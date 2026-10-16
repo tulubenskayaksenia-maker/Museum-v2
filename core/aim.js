@@ -15,7 +15,7 @@
 //
 // Если что-то пойдёт не так — просто поставь false.
 
-export const USE_POINTER_LOCK = true;
+export const USE_POINTER_LOCK = false;
 
 /*
   Когда мышь захвачена, браузер перестаёт обновлять

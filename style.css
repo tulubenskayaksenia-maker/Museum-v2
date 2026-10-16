@@ -20,16 +20,13 @@ canvas { display: block; }
 
   background: rgba(2, 3, 5, 0.8);
 
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
 
   transition:
-    opacity 0.25s ease,
-    visibility 0.25s ease;
+    opacity 0.12s ease,
+    visibility 0.12s ease;
 }
 
 #ticket-menu.visible {
@@ -61,7 +58,7 @@ canvas { display: block; }
     scale(0.98);
 
   transition:
-    transform 0.25s ease;
+    transform 0.12s ease;
 }
 
 #ticket-menu.visible .ticket-window {

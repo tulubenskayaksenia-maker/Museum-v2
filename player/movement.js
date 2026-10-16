@@ -1398,6 +1398,26 @@ function handleMouseDown(event) {
     return;
   }
 
+  // Клик по компьютеру в кассе открывает меню билета сразу
+  // при нажатии, не дожидаясь отпускания кнопки.
+  if (forwardButton) {
+    updatePointerCoordinates(
+      event.clientX,
+      event.clientY
+    );
+
+    if (
+      getInteractiveObject()?.userData
+        .type === "ticketComputer"
+    ) {
+      event.preventDefault();
+      clearInputState();
+      openTicketMenu();
+      updateCursor();
+      return;
+    }
+  }
+
   clickStepRemaining = 0;
   clickStepEndTime = 0;
 
