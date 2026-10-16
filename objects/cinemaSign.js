@@ -2,6 +2,11 @@ import {
   THREE
 } from "../core/scene.js";
 
+import {
+  createSignTexture,
+  createSignFaceMaterial
+} from "./signText.js";
+
 // =====================================================
 // CINEMA SIGN
 // =====================================================
@@ -72,12 +77,7 @@ export function createCinemaSign(parent) {
         width - 0.16,
         height - 0.14
       ),
-      new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      })
+      createSignFaceMaterial(texture)
     );
 
   text.position.z = 0.056;
@@ -151,56 +151,5 @@ function createCable({
 }
 
 function createCinemaTextTexture() {
-  const canvas =
-    document.createElement("canvas");
-
-  canvas.width = 1024;
-  canvas.height = 200;
-
-  const context =
-    canvas.getContext("2d");
-
-  context.clearRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-  context.font =
-    "500 72px Arial, Helvetica, sans-serif";
-
-  context.textAlign =
-    "center";
-
-  context.textBaseline =
-    "middle";
-
-  context.fillStyle =
-    "#f0f2f5";
-
-  context.shadowColor =
-    "rgba(210, 225, 250, 0.55)";
-
-  context.shadowBlur = 12;
-
-  context.fillText(
-    "CINEMA",
-    canvas.width / 2,
-    canvas.height / 2
-  );
-
-  const texture =
-    new THREE.CanvasTexture(canvas);
-
-  texture.colorSpace =
-    THREE.SRGBColorSpace;
-
-  texture.minFilter =
-    THREE.LinearFilter;
-
-  texture.magFilter =
-    THREE.LinearFilter;
-
-  return texture;
+  return createSignTexture("CINEMA", 1024, 200);
 }

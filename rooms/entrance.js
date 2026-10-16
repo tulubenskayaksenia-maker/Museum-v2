@@ -31,6 +31,10 @@ import {
   createFacilitySign
 } from "../objects/facilitySign.js";
 
+import {
+  createEntranceLogo
+} from "../objects/logo.js";
+
 export function createEntrance() {
   const entrance =
     new THREE.Group();
@@ -57,6 +61,9 @@ export function createEntrance() {
   // Перпендикулярная вывеска
   // WARDROBE · WC слева
   createFacilitySign(entrance);
+
+  // Логотип музея над главной аркой
+  createEntranceLogo(entrance);
 
   scene.add(entrance);
 

@@ -2,6 +2,11 @@ import {
   THREE
 } from "../core/scene.js";
 
+import {
+  createSignTexture,
+  createSignFaceMaterial
+} from "./signText.js";
+
 // =====================================================
 // MATERIALS
 // =====================================================
@@ -399,12 +404,7 @@ function createTextPlane({
       width,
       height
     ),
-    new THREE.MeshBasicMaterial({
-      map: texture,
-      transparent: true,
-      depthWrite: false,
-      side: THREE.DoubleSide
-    })
+    createSignFaceMaterial(texture)
   );
 }
 
@@ -412,65 +412,6 @@ function createTextPlane({
 // TEXTURE
 // =====================================================
 
-function createTextTexture(
-  text
-) {
-  const canvas =
-    document.createElement(
-      "canvas"
-    );
-
-  canvas.width = 1200;
-  canvas.height = 240;
-
-  const context =
-    canvas.getContext("2d");
-
-  context.clearRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
-  );
-
-  context.font =
-    "500 68px Arial, Helvetica, sans-serif";
-
-  context.textAlign =
-    "center";
-
-  context.textBaseline =
-    "middle";
-
-  context.fillStyle =
-    "#f0f2f5";
-
-  context.shadowColor =
-    "rgba(200, 218, 245, 0.55)";
-
-  context.shadowBlur = 12;
-
-  context.fillText(
-    text,
-    canvas.width / 2,
-    canvas.height / 2
-  );
-
-  const texture =
-    new THREE.CanvasTexture(
-      canvas
-    );
-
-  texture.colorSpace =
-    THREE.SRGBColorSpace;
-
-  texture.minFilter =
-    THREE.LinearFilter;
-
-  texture.magFilter =
-    THREE.LinearFilter;
-
-  texture.needsUpdate = true;
-
-  return texture;
+function createTextTexture(text) {
+  return createSignTexture(text, 1200, 240);
 }

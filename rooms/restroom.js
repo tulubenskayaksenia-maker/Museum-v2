@@ -728,15 +728,21 @@ function createBasin({
   basin.add(baseRing);
 
   // ---------------------------------------------------
-  // FAUCET STEM
+  // FAUCET: стойка → изгиб вперёд → излив вниз
   // ---------------------------------------------------
+  // Геометрия крана в плоскости «вверх/вперёд» (оси Y и Z).
+  const FAUCET_Z = 0.18;
+  const FAUCET_R = 0.2;
+  const FAUCET_TOP = 1.62;
+  const SPOUT_Y = FAUCET_TOP + FAUCET_R;
+  const SPOUT_END_Z = 0.66;
 
   const faucetStem =
     new THREE.Mesh(
       new THREE.CylinderGeometry(
-        0.06,
-        0.075,
-        0.48,
+        0.055,
+        0.07,
+        0.32,
         32
       ),
       metalMaterial
@@ -744,49 +750,53 @@ function createBasin({
 
   faucetStem.position.set(
     0,
-    1.54,
-    0.18
+    FAUCET_TOP - 0.16,
+    FAUCET_Z
   );
 
   basin.add(faucetStem);
 
-  // ---------------------------------------------------
-  // CURVED FAUCET NECK
-  // ---------------------------------------------------
+  // Плавный изгиб: четверть кольца, лежащая в плоскости Y–Z.
+  const neckGeometry =
+    new THREE.TorusGeometry(
+      FAUCET_R,
+      0.055,
+      16,
+      32,
+      Math.PI / 2
+    );
+
+  // Дуга от «верха» к «левому краю», потом поворот в плоскость Y–Z.
+  neckGeometry.rotateZ(Math.PI / 2);
 
   const faucetCurve =
     new THREE.Mesh(
-      new THREE.TorusGeometry(
-        0.245,
-        0.058,
-        16,
-        48,
-        Math.PI
-      ),
+      neckGeometry,
       metalMaterial
     );
 
-  faucetCurve.rotation.z =
-    Math.PI / 2;
+  faucetCurve.rotation.y =
+    -Math.PI / 2;
 
   faucetCurve.position.set(
     0,
-    1.76,
-    0.4
+    FAUCET_TOP,
+    FAUCET_Z + FAUCET_R
   );
 
   basin.add(faucetCurve);
 
-  // ---------------------------------------------------
-  // FAUCET SPOUT
-  // ---------------------------------------------------
+  // Горизонтальный излив.
+  const spoutLength =
+    SPOUT_END_Z -
+    (FAUCET_Z + FAUCET_R);
 
   const faucetSpout =
     new THREE.Mesh(
       new THREE.CylinderGeometry(
-        0.052,
-        0.052,
-        0.25,
+        0.055,
+        0.055,
+        spoutLength,
         24
       ),
       metalMaterial
@@ -797,36 +807,52 @@ function createBasin({
 
   faucetSpout.position.set(
     0,
-    1.76,
-    0.64
+    SPOUT_Y,
+    FAUCET_Z + FAUCET_R + spoutLength / 2
   );
 
   basin.add(faucetSpout);
 
-  // Наконечник крана.
+  // Закруглённый конец излива.
+  const faucetCap =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        0.055,
+        20,
+        14
+      ),
+      metalMaterial
+    );
+
+  faucetCap.position.set(
+    0,
+    SPOUT_Y,
+    SPOUT_END_Z
+  );
+
+  basin.add(faucetCap);
+
+  // Наконечник смотрит вниз, на слив.
   const faucetTip =
     new THREE.Mesh(
       new THREE.CylinderGeometry(
+        0.05,
         0.06,
-        0.052,
-        0.075,
+        0.09,
         24
       ),
       metalMaterial
     );
 
-  faucetTip.rotation.x =
-    Math.PI / 2;
-
   faucetTip.position.set(
     0,
-    1.76,
-    0.785
+    SPOUT_Y - 0.06,
+    SPOUT_END_Z
   );
 
   basin.add(faucetTip);
 
-  // Тёмный аэратор.
+  // Тёмный аэратор: смотрит вниз.
   const aerator =
     new THREE.Mesh(
       new THREE.CircleGeometry(
@@ -836,10 +862,13 @@ function createBasin({
       sensorMaterial
     );
 
+  aerator.rotation.x =
+    Math.PI / 2;
+
   aerator.position.set(
     0,
-    1.76,
-    0.825
+    SPOUT_Y - 0.107,
+    SPOUT_END_Z
   );
 
   basin.add(aerator);
