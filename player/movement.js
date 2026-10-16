@@ -1,4 +1,7 @@
 import {
+  resolveCollisions
+} from "./collision.js";
+import {
   THREE,
   camera,
   renderer
@@ -459,8 +462,8 @@ const ROOM_LIMITS = {
     startZ: 10,
     endZ: -34,
 
-    minX: -17,
-    maxX: 17
+    minX: -15,
+    maxX: 15
   },
 
   room02: {
@@ -475,8 +478,8 @@ const ROOM_LIMITS = {
     startZ: 10,
     endZ: -34,
 
-    minX: -17,
-    maxX: 17
+    minX: -15,
+    maxX: 15
   },
 
   room04: {
@@ -2745,6 +2748,20 @@ function updateCameraMovement(
 
   const previousZ =
     camera.position.z;
+
+  // Твёрдые предметы: столы, стойки, кресла, кабинки и т.д.
+  const solidResult =
+    resolveCollisions(
+      currentRoom,
+      rooms[currentRoom],
+      previousX,
+      previousZ,
+      nextX,
+      nextZ
+    );
+
+  nextX = solidResult.x;
+  nextZ = solidResult.z;
 
   camera.position.x =
     nextX;
