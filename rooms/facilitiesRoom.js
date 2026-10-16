@@ -5,6 +5,8 @@ import {
   renderer
 } from "../core/scene.js";
 
+import { applyConcrete } from "../core/concrete.js";
+
 import { getAimPoint } from "../core/aim.js";
 
 import {
@@ -39,6 +41,8 @@ const toiletWallMaterial =
     roughness: 0.94,
     metalness: 0
   });
+
+applyConcrete(toiletWallMaterial);
 
 const doorMaterial =
   new THREE.MeshStandardMaterial({

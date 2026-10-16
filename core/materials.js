@@ -1,4 +1,5 @@
 import { THREE } from "./scene.js";
+import { applyConcrete } from "./concrete.js";
 
 // ==========================================
 // ГЛАДКИЙ ПОЛ
@@ -19,6 +20,9 @@ export const wallMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.94,
   metalness: 0
 });
+
+// Бетонная фактура на всех стенах (форма не меняется, только поверхность).
+applyConcrete(wallMaterial);
 
 // Оставляем экспорт, чтобы старые импорты не ломали сайт.
 // Но никакой текстуры здесь больше нет.
