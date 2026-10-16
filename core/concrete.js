@@ -41,7 +41,7 @@ function getConcreteTexture() {
 
 export function applyConcrete(
   material,
-  { tile = 3.6, bump = 0, macro = 0.12 } = {}
+  { tile = 3.2, bump = 0, macro = 0 } = {}
 ) {
   const texture = getConcreteTexture();
 
@@ -97,12 +97,19 @@ export function applyConcrete(
           "#include <map_fragment>",
           `#include <map_fragment>
            vec2 cuv = concreteUV();
-           float ch = texture2D(tConcrete, cuv).r;
-           float cmacro =
-             texture2D(tConcrete, cuv * 0.173 + vec2(0.31, 0.57)).r;
-           diffuseColor.rgb *=
-             ch * 2.0 *
-             (1.0 + (cmacro * 2.0 - 1.0) * concreteMacro * 3.0);`
+           // Три слоя одной фактуры с разным масштабом и поворотом:
+           // повторов и симметрии не видно, рисунок хаотичный.
+           mat2 cRotB = mat2(0.8, 0.6, -0.6, 0.8);
+           mat2 cRotC = mat2(0.8776, -0.4794, 0.4794, 0.8776);
+           float tA = texture2D(tConcrete, cuv).r * 2.0;
+           float tB = texture2D(
+             tConcrete, cRotB * cuv * 0.43 + vec2(0.37, 0.71)
+           ).r * 2.0;
+           float tC = texture2D(
+             tConcrete, cRotC * cuv * 0.19 + vec2(0.13, 0.52)
+           ).r * 2.0;
+           float ch = tA * mix(1.0, tB, 0.65) * mix(1.0, tC, 0.45);
+           diffuseColor.rgb *= ch;`
         )
         .replace(
           "#include <normal_fragment_maps>",
