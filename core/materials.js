@@ -1,5 +1,4 @@
 import { THREE } from "./scene.js";
-import { applyConcrete } from "./concrete.js";
 
 // ==========================================
 // ГЛАДКИЙ ПОЛ
@@ -21,11 +20,6 @@ export const wallMaterial = new THREE.MeshStandardMaterial({
   metalness: 0
 });
 
-// Заброшенный бетон на всех стенах (форма не меняется, только поверхность).
-applyConcrete(wallMaterial);
-
-// Пол: только зерно и поры, без сколов и без копоти.
-applyConcrete(floorMaterial, { atlas: false, grime: 0 });
 
 // Оставляем экспорт, чтобы старые импорты не ломали сайт.
 // Но никакой текстуры здесь больше нет.

@@ -119,7 +119,7 @@ export function createRestroom({
 
   const roomWidth = 18;
   const roomDepth = 25;
-  const roomHeight = 8;
+  const roomHeight = 11;
 
   const centerZ = -3;
   const backWallZ = -15.5;

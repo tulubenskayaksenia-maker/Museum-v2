@@ -215,25 +215,25 @@ let ticketNoticeShownForApproach =
 // =====================================================
 
 const DEFAULT_EYE_HEIGHT =
-  2.4;
+  2.9;
 
 const ROOM_EYE_HEIGHTS = {
-  entrance: 2.4,
+  entrance: 2.9,
 
-  leftRoom: 2.4,
-  rightRoom: 2.4,
+  leftRoom: 2.9,
+  rightRoom: 2.9,
 
-  corridor: 7.15,
+  corridor: 7.65,
 
-  room01: 2.42,
-  room02: 2.44,
-  room03: 2.42,
-  room04: 2.4,
-  room05: 2.4,
-  room06: 2.4,
+  room01: 2.92,
+  room02: 2.94,
+  room03: 2.92,
+  room04: 2.9,
+  room05: 2.9,
+  room06: 2.9,
 
-  womenWC: 2.4,
-  menWC: 2.4
+  womenWC: 2.9,
+  menWC: 2.9
 };
 
 

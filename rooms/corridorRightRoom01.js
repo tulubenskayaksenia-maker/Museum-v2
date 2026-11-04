@@ -31,7 +31,7 @@ export function createCorridorRightRoom01() {
 
   const roomWidth = 36;
   const roomDepth = 44;
-  const roomHeight = 11;
+  const roomHeight = 15;
 
   const roomCenterZ = -11;
   const entranceWallZ = 10.45;
@@ -216,7 +216,7 @@ export function createCorridorRightRoom01() {
     parent: room,
     material: railMaterial,
     x: -7.5,
-    y: 10.3,
+    y: 14.3,
     z: -10.5,
     length: 37
   });
@@ -225,7 +225,7 @@ export function createCorridorRightRoom01() {
     parent: room,
     material: railMaterial,
     x: 7.5,
-    y: 10.3,
+    y: 14.3,
     z: -10.5,
     length: 37
   });
@@ -351,7 +351,7 @@ export function createCorridorRightRoom01() {
       width: photo.width,
       height: photo.height,
 
-      ceilingY: 10.3
+      ceilingY: 14.3
     });
   });
 

@@ -4,7 +4,6 @@ import {
   camera
 } from "../core/scene.js";
 
-import { applyConcrete } from "../core/concrete.js";
 
 import { getAimPoint } from "../core/aim.js";
 
@@ -26,13 +25,11 @@ const floorMaterial =
 
 const wallMaterial =
   new THREE.MeshStandardMaterial({
-    color: 0x0d0d0f,
+    color: 0x050506,
     roughness: 1,
     metalness: 0
   });
 
-// Тёмный бетон в кинозале: фактура едва заметна, зал остаётся тёмным.
-applyConcrete(wallMaterial);
 
 const ceilingMaterial =
   new THREE.MeshStandardMaterial({
@@ -111,7 +108,7 @@ export function createCinemaRoom() {
 
   const roomWidth = 28;
   const roomDepth = 48;
-  const roomHeight = 11;
+  const roomHeight = 15;
 
   const centerZ = -13;
   const backWallZ = -37;

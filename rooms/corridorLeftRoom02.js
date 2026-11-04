@@ -129,7 +129,7 @@ export function updateCorridorLeftRoom02() {
 function createArchitecture(parent) {
   const roomWidth = 32;
   const roomDepth = 46;
-  const roomHeight = 12;
+  const roomHeight = 16.5;
 
   const centerZ = -12;
   const backWallZ = -35;

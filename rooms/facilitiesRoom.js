@@ -5,7 +5,6 @@ import {
   renderer
 } from "../core/scene.js";
 
-import { applyConcrete } from "../core/concrete.js";
 
 import { getAimPoint } from "../core/aim.js";
 
@@ -42,7 +41,6 @@ const toiletWallMaterial =
     metalness: 0
   });
 
-applyConcrete(toiletWallMaterial);
 
 const doorMaterial =
   new THREE.MeshStandardMaterial({
@@ -228,7 +226,7 @@ function resetWardrobeState() {
 function createArchitecture(parent) {
   const roomWidth = 24;
   const roomDepth = 30;
-  const roomHeight = 9;
+  const roomHeight = 12.5;
 
   const centerZ = -5;
   const backWallZ = -20;
