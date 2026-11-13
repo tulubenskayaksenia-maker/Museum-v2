@@ -327,13 +327,14 @@ function createCentralScreen(parent) {
   roomVideo.src = ROOM_ASSETS.film;
   roomVideo.loop = true;
   roomVideo.muted = true;
-  roomVideo.autoplay = true;
+  // Не грузим видео заранее: оно начнёт загружаться,
+  // только когда посетитель зайдёт в комнату
+  // (см. updateCorridorLeftRoom02).
   roomVideo.playsInline = true;
-  roomVideo.preload = "auto";
+  roomVideo.preload = "none";
 
   roomVideo.setAttribute("playsinline", "");
   roomVideo.setAttribute("webkit-playsinline", "");
-  roomVideo.load();
 
   roomVideo.addEventListener("error", () => {
     console.warn(

@@ -7,3 +7,6 @@ Archive 5.zip
 # Large exhibition videos — stored outside GitHub
 original-assets/
 prepare-web-assets.sh
+
+# Локальные архивы — не для сайта
+Archive*.zip

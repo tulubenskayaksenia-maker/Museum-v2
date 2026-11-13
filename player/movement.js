@@ -459,7 +459,10 @@ const ROOM_LIMITS = {
   },
 
   room01: {
-    startZ: 10,
+    // Появляемся внутри зала, за аркой выхода (z≈8.6–9.6).
+    // При 10 камера стояла в самом проёме, и любой тап по картине
+    // попадал в невидимую зону двери «выход».
+    startZ: 7.5,
     endZ: -34,
 
     minX: -15,
@@ -467,7 +470,10 @@ const ROOM_LIMITS = {
   },
 
   room02: {
-    startZ: 10,
+    // Появляемся внутри зала, за аркой выхода (z≈8.6–9.6).
+    // При 10 камера стояла в самом проёме, и любой тап по картине
+    // попадал в невидимую зону двери «выход».
+    startZ: 7.5,
     endZ: -32,
 
     minX: -17,
@@ -475,7 +481,10 @@ const ROOM_LIMITS = {
   },
 
   room03: {
-    startZ: 10,
+    // Появляемся внутри зала, за аркой выхода (z≈8.6–9.6).
+    // При 10 камера стояла в самом проёме, и любой тап по картине
+    // попадал в невидимую зону двери «выход».
+    startZ: 7.5,
     endZ: -34,
 
     minX: -15,
@@ -516,6 +525,25 @@ export function setupMovement(
   roomMap
 ) {
   rooms = roomMap;
+
+  // Только для проверки: откройте сайт с ?debug и вызовите
+  // __museumGoTo("room01") в консоли. Посетители это не видят.
+  if (new URLSearchParams(location.search).has("debug")) {
+    window.__museumGoTo = goToRoom;
+    window.__museumDebug = {
+      camera,
+      pointer,
+      getInteractiveObject,
+      isArtworkOpen,
+      raycaster,
+      get rooms() {
+        return rooms;
+      },
+      get currentRoom() {
+        return currentRoom;
+      }
+    };
+  }
 
   const initialEyeHeight =
     getBaseEyeHeight(
@@ -2329,9 +2357,33 @@ function getInteractiveObject() {
       object =
         object.parent;
     }
+
+    // Обычная видимая поверхность (стена, перегородка, стенд)
+    // заслоняет всё, что за ней: картину за стеной открыть нельзя.
+    if (isOccludingHit(hit.object)) {
+      return null;
+    }
   }
 
   return null;
+}
+
+function isOccludingHit(object) {
+  if (!object?.isMesh || !object.visible) {
+    return false;
+  }
+
+  const materials =
+    Array.isArray(object.material)
+      ? object.material
+      : [object.material];
+
+  return materials.some(
+    (material) =>
+      material &&
+      material.visible !== false &&
+      !(material.transparent && material.opacity < 0.5)
+  );
 }
 
 

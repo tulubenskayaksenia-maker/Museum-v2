@@ -374,9 +374,10 @@ export function createCorridorRightRoom01() {
   roomVideo.src = videoPath;
   roomVideo.loop = true;
   roomVideo.muted = true;
-  roomVideo.autoplay = true;
+  // Видео грузится и играет только когда комната открыта
+  // (см. syncRoomVideo ниже) — экономит трафик и батарею.
   roomVideo.playsInline = true;
-  roomVideo.preload = "auto";
+  roomVideo.preload = "none";
 
   roomVideo.setAttribute(
     "playsinline",
@@ -881,15 +882,26 @@ export function createCorridorRightRoom01() {
     }
   }
 
-  startRoomVideo();
+  let roomVideoRequested = false;
 
-  window.addEventListener(
-    "pointerdown",
-    startRoomVideo,
-    {
-      once: true
+  function syncRoomVideo() {
+    if (room.visible) {
+      if (roomVideo.paused && !roomVideoRequested) {
+        roomVideoRequested = true;
+        startRoomVideo();
+      }
+    } else {
+      roomVideoRequested = false;
+
+      if (!roomVideo.paused) {
+        roomVideo.pause();
+      }
     }
-  );
+
+    requestAnimationFrame(syncRoomVideo);
+  }
+
+  requestAnimationFrame(syncRoomVideo);
 
 
   // ===================================================

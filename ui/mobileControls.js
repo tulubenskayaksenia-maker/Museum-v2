@@ -798,9 +798,11 @@ function createStyles() {
       position: absolute;
 
       left: 50%;
+      /* Ниже кнопки BACK (она 43px высотой, top 18px),
+         чтобы подсказка не пряталась под ней */
       top: max(
-        18px,
-        calc(env(safe-area-inset-top) + 10px)
+        72px,
+        calc(env(safe-area-inset-top) + 64px)
       );
 
       display: flex;
