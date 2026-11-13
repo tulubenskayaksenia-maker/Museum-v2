@@ -46,6 +46,90 @@
 <body>
 
   <!-- ===============================================
+       INVITATION (до открытия 23.11, 19:00)
+  ================================================ -->
+
+  <div id="museum-invite" aria-hidden="true">
+
+    <div
+      class="museum-onboarding-window museum-invite-window"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="museum-invite-title"
+    >
+
+      <img
+        class="museum-onboarding-logo"
+        src="assets/brand/logo-light.png"
+        alt="Incognito Museum logo"
+        draggable="false"
+      >
+
+      <div class="museum-onboarding-label">
+        OPENING NIGHT · <span class="museum-invite-date"></span>
+      </div>
+
+      <h1 id="museum-invite-title">
+        You're early
+      </h1>
+
+      <p>
+        Incognito Museum is a museum you walk through in your browser.
+        Inside are halls with paintings and photographs, a cinema
+        and rooms with video work by young artists. Entry is free.
+      </p>
+
+      <p>
+        We open on 23 November at 19:00 Israel time.
+        Leave your email and we'll send you an invitation with a ticket.
+        <span class="museum-invite-local"></span>
+      </p>
+
+      <form class="museum-invite-form" novalidate onsubmit="event.preventDefault()">
+
+        <input
+          type="text"
+          name="name"
+          placeholder="Your name"
+          autocomplete="name"
+          maxlength="80"
+        />
+
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          autocomplete="email"
+          inputmode="email"
+          required
+          maxlength="120"
+        />
+
+        <input
+          class="museum-invite-trap"
+          type="text"
+          name="website"
+          tabindex="-1"
+          autocomplete="off"
+          aria-hidden="true"
+        />
+
+        <button type="submit">
+          GET AN INVITATION
+        </button>
+
+      </form>
+
+      <div class="museum-invite-status" role="status"></div>
+
+      <div class="museum-invite-countdown"></div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ===============================================
        START / ONBOARDING
   ================================================ -->
 
@@ -69,8 +153,8 @@
       </h1>
 
       <p>
-        Explore the museum, enter rooms
-        and interact with artworks.
+        A museum you walk through in your browser.
+        Open any work up close and stay as long as you like.
       </p>
 
       <button

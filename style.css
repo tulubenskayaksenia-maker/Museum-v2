@@ -1440,3 +1440,182 @@ body.artist-intro-open {
     min-height: 68px;
   }
 }
+/* =====================================================
+   INVITATION — экран до открытия (23.11, 19:00)
+===================================================== */
+
+#museum-invite {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(40, 43, 50, 0.35),
+      rgba(5, 6, 8, 0.92)
+    );
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.35s ease,
+    visibility 0.35s ease;
+}
+
+#museum-invite.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+#museum-invite.visible .museum-onboarding-window {
+  transform: translateY(0) scale(1);
+}
+
+/* Пока музей закрыт — прячем все кнопки и подсказки интерфейса */
+body.museum-locked > :not(#museum-invite):not(canvas):not(script) {
+  display: none !important;
+}
+
+.museum-invite-window .museum-onboarding-logo {
+  height: 120px;
+  margin-bottom: 24px;
+}
+
+.museum-invite-window p {
+  margin-bottom: 18px;
+}
+
+.museum-invite-local {
+  display: block;
+  margin-top: 6px;
+  color: rgba(235, 236, 240, 0.45);
+}
+
+.museum-invite-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.museum-invite-form input {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 15px 16px;
+
+  color: #f3f1eb;
+  background: rgba(255, 255, 255, 0.04);
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0;
+
+  font-family: inherit;
+  font-size: 16px; /* 16px — чтобы iPhone не зумил поле при вводе */
+
+  outline: none;
+
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.museum-invite-form input::placeholder {
+  color: rgba(235, 236, 240, 0.38);
+}
+
+.museum-invite-form input:focus {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.museum-invite-form .museum-invite-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.museum-invite-form button {
+  width: 100%;
+  margin-top: 4px;
+  padding: 17px 22px;
+
+  color: #16171a;
+  background: #f0eee8;
+
+  border: 0;
+
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+
+  cursor: pointer;
+
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.museum-invite-form button:hover:not(:disabled) {
+  background: #ffffff;
+  transform: translateY(-2px);
+}
+
+.museum-invite-form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.museum-invite-status {
+  margin-top: 14px;
+
+  color: rgba(235, 236, 240, 0.72);
+
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.museum-invite-status:empty {
+  display: none;
+}
+
+.museum-invite-status[data-state="error"] {
+  color: #f0a39b;
+}
+
+.museum-invite-status[data-state="done"] {
+  padding: 16px;
+  color: #f3f1eb;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.museum-invite-countdown {
+  margin-top: 26px;
+
+  color: rgba(232, 235, 240, 0.46);
+
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 600px) {
+  #museum-invite {
+    padding: 14px;
+  }
+
+  .museum-invite-window .museum-onboarding-logo {
+    height: 96px;
+    margin-bottom: 20px;
+  }
+}

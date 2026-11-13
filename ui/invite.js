@@ -1,0 +1,200 @@
+import {
+  OPENING_TIME,
+  OPENING_LABEL,
+  INVITE_ENDPOINT,
+  PREVIEW_KEY
+} from "../config/opening.js";
+
+const PREVIEW_STORAGE_KEY =
+  "incognito-preview";
+
+function readPreviewAccess() {
+  const params =
+    new URLSearchParams(location.search);
+
+  const preview =
+    params.get("preview");
+
+  try {
+    if (preview === PREVIEW_KEY) {
+      localStorage.setItem(PREVIEW_STORAGE_KEY, "1");
+    } else if (preview === "off") {
+      localStorage.removeItem(PREVIEW_STORAGE_KEY);
+    }
+
+    return localStorage.getItem(PREVIEW_STORAGE_KEY) === "1";
+  } catch {
+    return preview === PREVIEW_KEY;
+  }
+}
+
+// true — музей ещё закрыт для этого посетителя
+export function isMuseumLocked() {
+  if (Date.now() >= OPENING_TIME.getTime()) {
+    return false;
+  }
+
+  return !readPreviewAccess();
+}
+
+function formatLocalOpening() {
+  const local =
+    OPENING_TIME.toLocaleString(undefined, {
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+  const israel =
+    OPENING_TIME.toLocaleString(undefined, {
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jerusalem"
+    });
+
+  return local === israel ? "" : local;
+}
+
+function formatCountdown() {
+  const ms =
+    OPENING_TIME.getTime() - Date.now();
+
+  if (ms <= 0) {
+    return "";
+  }
+
+  const minutes = Math.floor(ms / 60000);
+  const days = Math.floor(minutes / 1440);
+  const hours = Math.floor((minutes % 1440) / 60);
+  const mins = minutes % 60;
+
+  const plural = (n, word) =>
+    `${n} ${word}${n === 1 ? "" : "s"}`;
+
+  if (days > 0) {
+    return `Opens in ${plural(days, "day")} ${plural(hours, "hour")}`;
+  }
+
+  if (hours > 0) {
+    return `Opens in ${plural(hours, "hour")} ${plural(mins, "minute")}`;
+  }
+
+  return `Opens in ${plural(Math.max(mins, 1), "minute")}`;
+}
+
+export function setupInvite() {
+  const root =
+    document.getElementById("museum-invite");
+
+  if (!root) {
+    return;
+  }
+
+  const form =
+    root.querySelector("form");
+
+  const status =
+    root.querySelector(".museum-invite-status");
+
+  const submit =
+    root.querySelector("button[type=submit]");
+
+  const countdown =
+    root.querySelector(".museum-invite-countdown");
+
+  const localTime =
+    root.querySelector(".museum-invite-local");
+
+  root.querySelector(".museum-invite-date").textContent =
+    OPENING_LABEL;
+
+  const local =
+    formatLocalOpening();
+
+  if (local) {
+    localTime.textContent =
+      `That's ${local} where you are.`;
+  }
+
+  function tick() {
+    if (Date.now() >= OPENING_TIME.getTime()) {
+      // Время пришло — перезагружаем, музей откроется сам
+      location.reload();
+      return;
+    }
+
+    countdown.textContent =
+      formatCountdown();
+  }
+
+  tick();
+  setInterval(tick, 30000);
+
+  document.body.classList.add("museum-locked");
+  root.classList.add("visible");
+  root.setAttribute("aria-hidden", "false");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const data =
+      new FormData(form);
+
+    const email =
+      String(data.get("email") || "").trim();
+
+    // Поле-ловушка для ботов: люди его не видят
+    if (data.get("website")) {
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      status.textContent =
+        "Please check the email address.";
+      status.dataset.state = "error";
+      return;
+    }
+
+    if (!INVITE_ENDPOINT) {
+      status.textContent =
+        "Invitations aren't open yet. Please try again a bit later.";
+      status.dataset.state = "error";
+      return;
+    }
+
+    submit.disabled = true;
+    submit.textContent = "SENDING…";
+    status.textContent = "";
+    status.dataset.state = "";
+
+    try {
+      // Google Apps Script не отдаёт CORS-заголовки,
+      // поэтому ответ не читаем: no-cors просто доставляет запрос.
+      await fetch(INVITE_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        body: new URLSearchParams({
+          name: String(data.get("name") || "").trim(),
+          email,
+          timezone:
+            Intl.DateTimeFormat().resolvedOptions().timeZone || ""
+        })
+      });
+
+      form.hidden = true;
+      status.dataset.state = "done";
+      status.textContent =
+        `Done. Your invitation is on its way to ${email}. ` +
+        "If it isn't in your inbox in a few minutes, look in the spam folder.";
+    } catch {
+      submit.disabled = false;
+      submit.textContent = "GET AN INVITATION";
+      status.dataset.state = "error";
+      status.textContent =
+        "Something went wrong. Check your connection and try again.";
+    }
+  });
+}

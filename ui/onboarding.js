@@ -1,4 +1,4 @@
-export function setupOnboarding() {
+export function setupOnboarding({ show = true } = {}) {
   const onboarding =
     document.getElementById(
       "museum-onboarding"
@@ -155,5 +155,7 @@ export function setupOnboarding() {
     }
   );
 
-  showOnboarding();
+  if (show) {
+    showOnboarding();
+  }
 }

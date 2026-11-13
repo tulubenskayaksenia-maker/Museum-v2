@@ -80,6 +80,11 @@ import {
 } from "./ui/onboarding.js";
 
 import {
+  isMuseumLocked,
+  setupInvite
+} from "./ui/invite.js";
+
+import {
   setupMobileControls
 } from "./ui/mobileControls.js";
 
@@ -95,7 +100,18 @@ import {
 // UI — создаём интерфейсы до комнат и движения
 // =====================================================
 
-setupOnboarding();
+// До открытия (23.11, 19:00) вместо приветствия — экран-приглашение
+const museumLocked =
+  isMuseumLocked();
+
+setupOnboarding({
+  show: !museumLocked
+});
+
+if (museumLocked) {
+  setupInvite();
+}
+
 setupTicketMenu();
 setupCinemaViewer();
 setupSculptureViewer();
