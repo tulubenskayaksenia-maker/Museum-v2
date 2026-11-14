@@ -20,6 +20,11 @@
 // ---------- НАСТРОЙКИ ----------
 
 const SITE_URL = "https://incogmusem.com";
+
+// Ссылка из письма: сайт узнаёт гостя и показывает «вы в списке гостей»
+function guestLink_(ticket) {
+  return SITE_URL + "/?ticket=" + encodeURIComponent(ticket || "");
+}
 const LOGO_URL = "https://incogmusem.com/assets/brand/logo-light.png";
 
 const OPENING_START = new Date("2026-11-23T19:00:00+02:00");
@@ -194,7 +199,7 @@ function sendTicket_(email, name, ticket) {
             '</table>' +
           '</td></tr>' +
           '<tr><td style="border-top:1px dashed #3a3c42;padding:18px 26px;text-align:center;">' +
-            '<a href="' + SITE_URL + '" style="display:inline-block;background:#f0eee8;color:#16171a;' +
+            '<a href="' + guestLink_(ticket) + '" style="display:inline-block;background:#f0eee8;color:#16171a;' +
               'text-decoration:none;font-size:11px;font-weight:bold;letter-spacing:3px;padding:14px 26px;">' +
               'INCOGMUSEM.COM</a>' +
           '</td></tr>' +
@@ -222,7 +227,7 @@ function sendTicket_(email, name, ticket) {
     "Date: " + OPENING_DATE_TEXT + "\n" +
     "Time: " + OPENING_TIME_TEXT + "\n" +
     "Ticket: " + ticket + "\n" +
-    "Where: " + SITE_URL + "\n\n" +
+    "Where: " + guestLink_(ticket) + "\n\n" +
     "See you there,\n" + SIGNATURE;
 
   MailApp.sendEmail({
@@ -259,7 +264,7 @@ function calendarFile_(ticket) {
     "SUMMARY:Incognito Museum opening",
     "DESCRIPTION:Ticket " + ticket + ". Open " + SITE_URL + " at 19:00 Israel time.",
     "LOCATION:" + SITE_URL,
-    "URL:" + SITE_URL,
+    "URL:" + guestLink_(ticket),
     "END:VEVENT",
     "END:VCALENDAR"
   ].join("\r\n");
@@ -325,7 +330,7 @@ function sendPendingReminders_() {
         body:
           hello + "\n\n" +
           "we open today at 19:00 Israel time.\n" +
-          "Here is the link: " + SITE_URL + "\n\n" +
+          "Here is the link: " + guestLink_(rows[i][3]) + "\n\n" +
           "Your ticket number is " + rows[i][3] + ". You won't need to show it, " +
           "the door will simply be open.\n\n" +
           "See you inside,\n" + SIGNATURE

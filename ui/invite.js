@@ -8,6 +8,37 @@ import {
 const PREVIEW_STORAGE_KEY =
   "incognito-preview";
 
+const GUEST_STORAGE_KEY =
+  "incognito-guest";
+
+function readGuest() {
+  try {
+    return JSON.parse(localStorage.getItem(GUEST_STORAGE_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function saveGuest(guest) {
+  try {
+    const previous = readGuest() || {};
+    localStorage.setItem(
+      GUEST_STORAGE_KEY,
+      JSON.stringify({ ...previous, ...guest })
+    );
+  } catch {
+    // приватный режим — просто не запоминаем
+  }
+}
+
+function forgetGuest() {
+  try {
+    localStorage.removeItem(GUEST_STORAGE_KEY);
+  } catch {
+    // ничего
+  }
+}
+
 function readPreviewAccess() {
   const params =
     new URLSearchParams(location.search);
@@ -108,8 +139,83 @@ export function setupInvite() {
   const localTime =
     root.querySelector(".museum-invite-local");
 
+  const title =
+    root.querySelector("#museum-invite-title");
+
+  const cta =
+    root.querySelector(".museum-invite-cta");
+
+  const registered =
+    root.querySelector(".museum-invite-registered");
+
+  const registeredText =
+    root.querySelector(".museum-invite-registered-text");
+
+  const againButton =
+    root.querySelector(".museum-invite-again");
+
   root.querySelector(".museum-invite-date").textContent =
     OPENING_LABEL;
+
+  // Состояние «вы уже в списке гостей»
+  function showRegistered(guest, justSent = false) {
+    const name =
+      guest?.name ? `, ${guest.name}` : "";
+
+
+    title.textContent =
+      "See you on the 23rd";
+
+    registeredText.textContent =
+      `You're on the guest list${name}. ` +
+      (guest?.ticket
+        ? `Your ticket ${guest.ticket} is in your email. `
+        : justSent
+          ? "Your ticket is on its way to your email. "
+          : "We sent your ticket by email. ") +
+      "The museum opens on 23 November at 19:00 Israel time. " +
+      "Come back to this page then, the door will be open.";
+
+    cta.hidden = true;
+    form.hidden = true;
+    status.textContent = "";
+    status.dataset.state = "";
+    registered.hidden = false;
+  }
+
+  function showSignup() {
+    title.textContent =
+      "You're early";
+
+    cta.hidden = false;
+    form.hidden = false;
+    form.reset();
+    submit.disabled = false;
+    submit.textContent = "GET AN INVITATION";
+    status.textContent = "";
+    status.dataset.state = "";
+    registered.hidden = true;
+  }
+
+  againButton.addEventListener("click", () => {
+    forgetGuest();
+    showSignup();
+  });
+
+  // Пришли по ссылке из письма: ?ticket=IM-0007
+  const ticketFromLink =
+    new URLSearchParams(location.search).get("ticket");
+
+  if (ticketFromLink && /^IM-[A-Z0-9]{1,8}$/i.test(ticketFromLink)) {
+    saveGuest({ ticket: ticketFromLink.toUpperCase() });
+  }
+
+  const knownGuest =
+    readGuest();
+
+  if (knownGuest) {
+    showRegistered(knownGuest);
+  }
 
   const local =
     formatLocalOpening();
@@ -184,11 +290,16 @@ export function setupInvite() {
         })
       });
 
-      form.hidden = true;
+      const name =
+        String(data.get("name") || "").trim();
+
+      saveGuest({ name, email });
+      showRegistered({ name }, true);
+
       status.dataset.state = "done";
       status.textContent =
-        `Done. Your invitation is on its way to ${email}. ` +
-        "Usually it arrives within a minute, on busy days it can take a few hours. " +
+        `We sent it to ${email}. Usually it arrives within a minute, ` +
+        "on busy days it can take a few hours. " +
         "If you can't find it, look in the spam folder.";
     } catch {
       submit.disabled = false;

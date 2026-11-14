@@ -1628,3 +1628,33 @@ body.museum-locked > :not(#museum-invite):not(canvas):not(script) {
     margin-bottom: 20px;
   }
 }
+
+/* Состояние «вы в списке гостей» */
+#museum-invite [hidden] {
+  display: none !important;
+}
+
+.museum-invite-registered-text {
+  color: rgba(235, 236, 240, 0.78) !important;
+}
+
+.museum-invite-again {
+  margin-top: 4px;
+  padding: 0;
+
+  color: rgba(235, 236, 240, 0.55);
+  background: none;
+  border: 0;
+
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  cursor: pointer;
+}
+
+.museum-invite-again:hover {
+  color: #f3f1eb;
+}
