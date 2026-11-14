@@ -1342,10 +1342,26 @@ function createCabin({
 
   cabin.add(back);
 
+  // Дверь кабинки открывается кликом / тапом.
+  // Петля — у левого края, дверь распахивается наружу.
+  const doorWidth =
+    width - 0.34;
+
+  const hinge =
+    new THREE.Group();
+
+  hinge.position.set(
+    -doorWidth / 2,
+    0,
+    depth / 2
+  );
+
+  cabin.add(hinge);
+
   const door =
     new THREE.Mesh(
       new THREE.BoxGeometry(
-        width - 0.34,
+        doorWidth,
         4.85,
         0.15
       ),
@@ -1353,12 +1369,12 @@ function createCabin({
     );
 
   door.position.set(
-    0,
+    doorWidth / 2,
     2.67,
-    depth / 2
+    0
   );
 
-  cabin.add(door);
+  hinge.add(door);
 
   const handle =
     new THREE.Mesh(
@@ -1375,12 +1391,52 @@ function createCabin({
     Math.PI / 2;
 
   handle.position.set(
-    width * 0.32,
+    doorWidth / 2 + width * 0.32,
     2.7,
-    depth / 2 + 0.13
+    0.13
   );
 
-  cabin.add(handle);
+  hinge.add(handle);
+
+  const doorState = {
+    open: false,
+    angle: 0,
+    animating: false
+  };
+
+  function animateDoor() {
+    const target =
+      doorState.open ? -1.55 : 0;
+
+    doorState.angle +=
+      (target - doorState.angle) * 0.18;
+
+    if (Math.abs(target - doorState.angle) < 0.002) {
+      doorState.angle = target;
+      doorState.animating = false;
+    }
+
+    hinge.rotation.y =
+      doorState.angle;
+
+    if (doorState.animating) {
+      requestAnimationFrame(animateDoor);
+    }
+  }
+
+  const toggle = () => {
+    doorState.open = !doorState.open;
+
+    if (!doorState.animating) {
+      doorState.animating = true;
+      requestAnimationFrame(animateDoor);
+    }
+  };
+
+  for (const part of [door, handle]) {
+    part.userData.type = "cabinDoor";
+    part.userData.toggle = toggle;
+  }
 
   const toiletBase =
     new THREE.Mesh(
@@ -1609,8 +1665,12 @@ function createTextSign(
 
   sign.add(base);
 
+  // Пропорции текстуры = пропорции вывески, чтобы буквы не сплющивались
   const texture =
-    createTextTexture(text);
+    createTextTexture(
+      text,
+      Math.round(1024 * (height - 0.1) / (width - 0.12))
+    );
 
   const plane =
     new THREE.Mesh(
@@ -1633,14 +1693,14 @@ function createTextSign(
   return sign;
 }
 
-function createTextTexture(text) {
+function createTextTexture(text, canvasHeight = 180) {
   const canvas =
     document.createElement(
       "canvas"
     );
 
   canvas.width = 1024;
-  canvas.height = 180;
+  canvas.height = Math.max(48, canvasHeight);
 
   const context =
     canvas.getContext("2d");
@@ -1653,7 +1713,7 @@ function createTextTexture(text) {
   );
 
   context.font =
-    "500 62px Arial, Helvetica, sans-serif";
+    `500 ${Math.min(62, Math.round(canvas.height * 0.55))}px Arial, Helvetica, sans-serif`;
 
   context.textAlign =
     "center";

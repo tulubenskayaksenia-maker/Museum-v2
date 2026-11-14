@@ -677,9 +677,8 @@ export function setupMovement(
 
   setupAimStyles();
 
-  if (isTouchDevice) {
-    createMobileBackButton();
-  }
+  // Кнопка «назад» — и на телефоне, и на компьютере
+  createMobileBackButton();
 
   updateCursor();
   broadcastNavigationState();
@@ -2197,6 +2196,18 @@ function performPrimaryAction() {
     return true;
   }
 
+  // Дверь кабинки в туалете: открыть / закрыть одним кликом
+  if (
+    interactiveObject?.userData.type ===
+    "cabinDoor"
+  ) {
+    clearInputState();
+
+    interactiveObject.userData.toggle?.();
+
+    return true;
+  }
+
   if (
     interactiveObject?.userData.type ===
     "artwork"
@@ -2370,7 +2381,8 @@ function getInteractiveObject() {
       if (
         type === "door" ||
         type === "ticketComputer" ||
-        type === "artwork"
+        type === "artwork" ||
+        type === "cabinDoor"
       ) {
         return object;
       }
@@ -3467,7 +3479,10 @@ function updateCursor() {
     return;
   }
 
-  if (type === "door") {
+  if (
+    type === "door" ||
+    type === "cabinDoor"
+  ) {
     document.body.style.cursor =
       "pointer";
 
@@ -3656,6 +3671,10 @@ function createMobileBackButton() {
 
     <span class="museum-mobile-back-label">
       BACK
+    </span>
+
+    <span class="museum-back-key">
+      ⌫
     </span>
   `;
 
@@ -4009,9 +4028,27 @@ function setupInteractionStyles() {
       }
     }
 
+    /* На компьютере рядом с BACK подсказка: клавиша Backspace */
+    .museum-back-key {
+      display: none;
+      margin-left: 4px;
+      padding: 1px 6px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
     @media (pointer: fine) {
+      .museum-back-key {
+        display: inline-block;
+      }
+
       #museum-mobile-back {
-        display: none;
+        cursor: pointer;
+      }
+
+      #museum-mobile-back:hover {
+        background: rgba(30, 30, 30, 0.75);
       }
     }
   `;

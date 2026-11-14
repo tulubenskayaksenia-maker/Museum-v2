@@ -1423,14 +1423,14 @@ function createCloakroomSign(parent) {
     createTextSign(
   "WARDROBE",
       5.8,
-      0.64,
+      0.5,
       64
     );
 
   title.position.set(
     -6.3,
-    6.79,
-    -13.68
+    6.86,
+    -13.6
   );
 
   title.rotation.set(
@@ -1445,14 +1445,14 @@ function createCloakroomSign(parent) {
     createTextSign(
       "SELECT A NUMBER",
       4.2,
-      0.27,
+      0.3,
       28
     );
 
   subtitle.position.set(
     -6.3,
-    6.33,
-    -13.67
+    6.4,
+    -13.6
   );
 
   subtitle.rotation.set(
@@ -2654,23 +2654,43 @@ function createTextSign(
 
   sign.add(base);
 
+  const planeWidth =
+    width - 0.1;
+
+  const planeHeight =
+    height - 0.08;
+
+  // Картинка с текстом в тех же пропорциях, что и вывеска,
+  // иначе буквы сплющиваются и рябят.
+  const canvasWidth = 1024;
+
+  const canvasHeight =
+    Math.max(
+      48,
+      Math.round(canvasWidth * planeHeight / planeWidth)
+    );
+
   const texture =
     createTextTexture(
       text,
       {
-        width: 1024,
-        height: 180,
-        fontSize,
+        width: canvasWidth,
+        height: canvasHeight,
+        fontSize: Math.min(
+          fontSize * 2,
+          Math.round(canvasHeight * 0.62)
+        ),
         textColor:
-          "#e3e1dc"
+          "#e3e1dc",
+        fitWidth: true
       }
     );
 
   const plane =
     new THREE.Mesh(
       new THREE.PlaneGeometry(
-        width - 0.1,
-        height - 0.08
+        planeWidth,
+        planeHeight
       ),
       new THREE.MeshBasicMaterial({
         map: texture,
@@ -2697,7 +2717,8 @@ function createTextTexture(
     width = 1024,
     height = 180,
     fontSize = 62,
-    textColor = "#e3e1dc"
+    textColor = "#e3e1dc",
+    fitWidth = false
   } = {}
 ) {
   const canvas =
@@ -2720,6 +2741,20 @@ function createTextTexture(
 
   context.font =
     `500 ${fontSize}px Arial, Helvetica, sans-serif`;
+
+  // Длинный текст уменьшаем, чтобы он не вылезал за края
+  if (fitWidth) {
+    let size = fontSize;
+
+    while (
+      size > 10 &&
+      context.measureText(text).width > width * 0.9
+    ) {
+      size -= 2;
+      context.font =
+        `500 ${size}px Arial, Helvetica, sans-serif`;
+    }
+  }
 
   context.textAlign =
     "center";
