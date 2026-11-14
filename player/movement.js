@@ -1569,7 +1569,23 @@ function handleMouseUp(event) {
 // KEYBOARD
 // =====================================================
 
+// Пока человек печатает в поле (форма приглашения и т.п.),
+// клавиши не должны управлять камерой.
+function isTypingTarget(target) {
+  return Boolean(
+    target &&
+    (
+      target.isContentEditable ||
+      /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)
+    )
+  );
+}
+
 function handleKeyDown(event) {
+  if (isTypingTarget(event.target)) {
+    return;
+  }
+
   // event.code привязан к физическому расположению клавиши,
   // поэтому управление работает при любой раскладке языка.
   const code = event.code;
@@ -1628,6 +1644,10 @@ function handleKeyDown(event) {
 }
 
 function handleKeyUp(event) {
+  if (isTypingTarget(event.target)) {
+    return;
+  }
+
   pressedKeys.delete(
     event.code
   );
