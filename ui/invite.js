@@ -188,7 +188,8 @@ export function setupInvite() {
       status.dataset.state = "done";
       status.textContent =
         `Done. Your invitation is on its way to ${email}. ` +
-        "If it isn't in your inbox in a few minutes, look in the spam folder.";
+        "Usually it arrives within a minute, on busy days it can take a few hours. " +
+        "If you can't find it, look in the spam folder.";
     } catch {
       submit.disabled = false;
       submit.textContent = "GET AN INVITATION";

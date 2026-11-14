@@ -8,7 +8,11 @@
  *  - в день открытия рассылает всем напоминание (sendOpeningReminder).
  *
  * Письма уходят с твоего Gmail. Лимит Google: около 100 писем в день
- * для обычного аккаунта. Остаток видно в функции checkQuota.
+ * для обычного аккаунта. Если лимит кончился, гость встаёт в очередь
+ * (пустая колонка «Ticket sent»), и processQueue раз в час досылает
+ * билеты, как только Google снова разрешает отправку.
+ *
+ * После вставки кода запусти ОДИН раз функцию setupTriggers.
  *
  * Как установить: см. инструкцию в чате или README рядом.
  */
@@ -27,6 +31,14 @@ const SENDER_NAME = "Incognito Museum";
 const SIGNATURE = "Ksenia, Incognito Museum";
 
 const SHEET_NAME = "Guests";
+
+// Колонки таблицы (номера с 1)
+const COL_REMINDER = 6;   // F: Reminder sent
+const COL_TICKET = 7;     // G: Ticket sent
+
+// Напоминание: 23.11 с 17:00 до конца дня
+const REMINDER_START = new Date("2026-11-23T17:00:00+02:00");
+const REMINDER_STOP = new Date("2026-11-24T00:00:00+02:00");
 
 // ---------- ПРИЁМ ЗАЯВОК С САЙТА ----------
 
@@ -47,17 +59,22 @@ function doPost(e) {
     const sheet = getSheet_();
     const rows = sheet.getDataRange().getValues();
 
-    // Уже есть в списке — повторно билет не создаём, просто шлём ещё раз
+    // Уже есть в списке: новый билет не создаём
     for (let i = 1; i < rows.length; i++) {
       if (String(rows[i][2]).toLowerCase() === email) {
-        sendTicket_(email, rows[i][1] || name, rows[i][3]);
+        if (!rows[i][COL_TICKET - 1]) {
+          return reply_("queued"); // билет ещё в очереди, пришлём сами
+        }
+        if (MailApp.getRemainingDailyQuota() > 0) {
+          trySendTicket_(sheet, i + 1, email, rows[i][1] || name, rows[i][3], true);
+        }
         return reply_("resent");
       }
     }
 
     const ticket = "IM-" + String(rows.length).padStart(4, "0");
-    sheet.appendRow([new Date(), name, email, ticket, timezone, ""]);
-    sendTicket_(email, name, ticket);
+    sheet.appendRow([new Date(), name, email, ticket, timezone, "", ""]);
+    trySendTicket_(sheet, sheet.getLastRow(), email, name, ticket, false);
 
     return reply_("ok");
   } finally {
@@ -67,6 +84,78 @@ function doPost(e) {
 
 function doGet() {
   return reply_("Incognito Museum invitations are running.");
+}
+
+// Отправляет билет, если есть лимит. Иначе оставляет в очереди.
+function trySendTicket_(sheet, rowNumber, email, name, ticket, isResend) {
+  if (MailApp.getRemainingDailyQuota() < 1) {
+    return false;
+  }
+
+  try {
+    sendTicket_(email, name, ticket);
+  } catch (err) {
+    console.warn("Ticket not sent, left in queue: " + email + " " + err);
+    return false;
+  }
+
+  if (!isResend) {
+    sheet.getRange(rowNumber, COL_TICKET).setValue(new Date());
+  }
+
+  return true;
+}
+
+// ---------- ОЧЕРЕДЬ (запускается каждый час) ----------
+
+function processQueue() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) {
+    return;
+  }
+
+  try {
+    const now = new Date();
+    const reminderTime = now >= REMINDER_START && now < REMINDER_STOP;
+
+    // В день открытия сначала напоминания, потом билеты
+    if (reminderTime) {
+      sendPendingReminders_();
+    }
+
+    // Билеты после начала открытия уже не нужны: музей открыт
+    if (now < OPENING_START) {
+      sendPendingTickets_();
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function sendPendingTickets_() {
+  const sheet = getSheet_();
+  const rows = sheet.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][2] || rows[i][COL_TICKET - 1]) {
+      continue;
+    }
+
+    if (!trySendTicket_(sheet, i + 1, rows[i][2], rows[i][1], rows[i][3], false)) {
+      if (MailApp.getRemainingDailyQuota() < 1) {
+        break; // лимит кончился, продолжим в следующий час
+      }
+    }
+  }
+}
+
+/** Сколько гостей ждут билет и сколько писем ещё можно отправить сегодня. */
+function checkQueue() {
+  const rows = getSheet_().getDataRange().getValues().slice(1);
+  const waiting = rows.filter((r) => r[2] && !r[COL_TICKET - 1]).length;
+  Logger.log("Гостей всего: " + rows.length);
+  Logger.log("Ждут билет: " + waiting);
+  Logger.log("Писем можно отправить сегодня: " + MailApp.getRemainingDailyQuota());
 }
 
 // ---------- ПИСЬМО С БИЛЕТОМ ----------
@@ -181,53 +270,72 @@ function calendarFile_(ticket) {
 // ---------- НАПОМИНАНИЕ В ДЕНЬ ОТКРЫТИЯ ----------
 
 /**
- * Запусти ОДИН раз вручную: поставит автоматическую отправку
- * напоминания 23 ноября в 17:00 по Израилю (за 2 часа до открытия).
+ * Запусти ОДИН раз вручную после вставки кода.
+ * Ставит: очередь билетов каждый час + напоминание 23.11 в 17:00.
  */
-function scheduleReminder() {
-  ScriptApp.getProjectTriggers()
-    .filter((t) => t.getHandlerFunction() === "sendOpeningReminder")
-    .forEach((t) => ScriptApp.deleteTrigger(t));
+function setupTriggers() {
+  ScriptApp.getProjectTriggers().forEach((t) => ScriptApp.deleteTrigger(t));
+
+  ScriptApp.newTrigger("processQueue")
+    .timeBased()
+    .everyHours(1)
+    .create();
 
   ScriptApp.newTrigger("sendOpeningReminder")
     .timeBased()
-    .at(new Date("2026-11-23T17:00:00+02:00"))
+    .at(REMINDER_START)
     .create();
+
+  getSheet_(); // заодно добавит колонку «Ticket sent», если её нет
+  Logger.log("Готово: очередь раз в час и напоминание 23.11 в 17:00.");
+}
+
+// Старое имя оставлено, чтобы ничего не сломалось
+function scheduleReminder() {
+  setupTriggers();
 }
 
 function sendOpeningReminder() {
+  sendPendingReminders_();
+}
+
+function sendPendingReminders_() {
   const sheet = getSheet_();
   const rows = sheet.getDataRange().getValues();
 
   for (let i = 1; i < rows.length; i++) {
     const email = rows[i][2];
     const name = rows[i][1];
-    const alreadySent = rows[i][5];
 
-    if (!email || alreadySent) {
+    if (!email || rows[i][COL_REMINDER - 1]) {
       continue;
     }
 
     if (MailApp.getRemainingDailyQuota() < 1) {
-      break; // лимит на сегодня кончился, остальные — при следующем запуске
+      break; // остальным — в следующий час
     }
 
     const hello = name ? "Hi " + name + "," : "Hi,";
 
-    MailApp.sendEmail({
-      to: email,
-      name: SENDER_NAME,
-      subject: "Today at 19:00: Incognito Museum opens",
-      body:
-        hello + "\n\n" +
-        "we open in two hours, at 19:00 Israel time.\n" +
-        "Here is the link: " + SITE_URL + "\n\n" +
-        "Your ticket number is " + rows[i][3] + ". You won't need to show it, " +
-        "the door will simply be open.\n\n" +
-        "See you inside,\n" + SIGNATURE
-    });
+    try {
+      MailApp.sendEmail({
+        to: email,
+        name: SENDER_NAME,
+        subject: "Today at 19:00: Incognito Museum opens",
+        body:
+          hello + "\n\n" +
+          "we open today at 19:00 Israel time.\n" +
+          "Here is the link: " + SITE_URL + "\n\n" +
+          "Your ticket number is " + rows[i][3] + ". You won't need to show it, " +
+          "the door will simply be open.\n\n" +
+          "See you inside,\n" + SIGNATURE
+      });
+    } catch (err) {
+      console.warn("Reminder not sent: " + email + " " + err);
+      continue;
+    }
 
-    sheet.getRange(i + 1, 6).setValue(new Date());
+    sheet.getRange(i + 1, COL_REMINDER).setValue(new Date());
   }
 }
 
@@ -254,8 +362,18 @@ function getSheet_() {
   if (!sheet) {
     sheet = ss.getSheets()[0];
     sheet.setName(SHEET_NAME);
-    sheet.appendRow(["Signed up", "Name", "Email", "Ticket", "Timezone", "Reminder sent"]);
+    sheet.appendRow(["Signed up", "Name", "Email", "Ticket", "Timezone", "Reminder sent", "Ticket sent"]);
     sheet.setFrozenRows(1);
+  }
+
+  // Таблица из первой версии: добавляем колонку «Ticket sent».
+  // Всем, кто записался до этого, билет уже был отправлен сразу.
+  if (sheet.getRange(1, COL_TICKET).getValue() !== "Ticket sent") {
+    sheet.getRange(1, COL_TICKET).setValue("Ticket sent");
+    const last = sheet.getLastRow();
+    if (last > 1) {
+      sheet.getRange(2, COL_TICKET, last - 1, 1).setValue("sent (v1)");
+    }
   }
 
   return sheet;
