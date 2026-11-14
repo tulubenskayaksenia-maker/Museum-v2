@@ -700,6 +700,7 @@ function isInterfaceElement(
   return Boolean(
     target.closest(
       [
+        "#museum-invite",
         "#ticket-menu",
         "#artist-intro",
         "#cinema-viewer",
