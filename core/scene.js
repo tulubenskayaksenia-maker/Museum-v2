@@ -81,6 +81,11 @@ renderer.toneMappingExposure = 1.15;
 
 document.body.appendChild(renderer.domElement);
 
+// Только для съёмки видео и отладки (?debug в адресе)
+if (new URLSearchParams(location.search).has("debug")) {
+  window.__three = { THREE, scene, camera, renderer };
+}
+
 // =====================================================
 // RESIZE
 // =====================================================
