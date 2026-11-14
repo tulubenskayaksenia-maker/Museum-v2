@@ -12,9 +12,8 @@ export const OPENING_LABEL =
   "23 November, 19:00 Israel time";
 
 // Адрес Google Apps Script (Deploy → Web app → URL).
-// Пока пусто — форма покажет ошибку вместо отправки.
 export const INVITE_ENDPOINT =
-  "";
+  "https://script.google.com/macros/s/AKfycbzyUF47M_ysErHUsg3a2LNgQBexehDRYZqeEYqRezrTtyfe2xzXJKem60iBMrITc-wkgw/exec";
 
 // Доступ для себя до открытия:
 // открой сайт один раз как incogmusem.com/?preview=incognito-2311
