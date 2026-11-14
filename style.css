@@ -1530,6 +1530,15 @@ body.museum-locked > :not(#museum-invite):not(canvas):not(script) {
   transition: border-color 0.2s ease, background 0.2s ease;
 }
 
+.museum-invite-form input:-webkit-autofill,
+.museum-invite-form input:-webkit-autofill:hover,
+.museum-invite-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f3f1eb;
+  -webkit-box-shadow: 0 0 0 1000px #1d1f24 inset;
+  caret-color: #f3f1eb;
+  transition: background-color 9999s ease 0s;
+}
+
 .museum-invite-form input::placeholder {
   color: rgba(235, 236, 240, 0.38);
 }
