@@ -23,6 +23,7 @@ let ambientFilter = null;
 let ambientGain = null;
 let humGain = null;
 let enabled = true;
+let videoDucked = false;
 let started = false;
 let currentRoom = "entrance";
 
@@ -109,7 +110,7 @@ function start() {
   started = true;
 
   master = ctx.createGain();
-  master.gain.value = enabled ? 1 : 0;
+  master.gain.value = enabled && !videoDucked ? 1 : 0;
   master.connect(ctx.destination);
 
   // Эхо
@@ -180,7 +181,7 @@ function out(node, wet = true) {
 
 // Шаг: щелчок каблука + мягкий низкий удар
 function playStep() {
-  if (!ctx || !enabled) {
+  if (!ctx || !enabled || videoDucked) {
     return;
   }
 
@@ -224,7 +225,7 @@ function playStep() {
 
 // Переход между залами: мягкий «вдох»
 function playWhoosh() {
-  if (!ctx || !enabled) {
+  if (!ctx || !enabled || videoDucked) {
     return;
   }
 
@@ -253,7 +254,7 @@ function playWhoosh() {
 
 // Скрип двери
 function playCreak() {
-  if (!ctx || !enabled) {
+  if (!ctx || !enabled || videoDucked) {
     return;
   }
 
@@ -292,7 +293,7 @@ function playCreak() {
 
 // Тихий щелчок при открытии окна
 function playClick() {
-  if (!ctx || !enabled) {
+  if (!ctx || !enabled || videoDucked) {
     return;
   }
 
@@ -311,6 +312,60 @@ function playClick() {
   out(g, false);
   osc.start(t);
   osc.stop(t + 0.08);
+}
+
+function updateMasterGain() {
+  if (!master || !ctx) {
+    return;
+  }
+
+  const target =
+    enabled && !videoDucked ? 1 : 0;
+
+  // Плавно: 0.25 с на затухание, чуть дольше на возврат
+  master.gain.setTargetAtTime(
+    target,
+    ctx.currentTime,
+    target ? 0.4 : 0.12
+  );
+}
+
+/*
+  Видео смотрим в тишине: пока открыт полноэкранный плеер
+  или где-то играет видео со звуком, звуки музея выключены.
+  Видео на стенах в залах беззвучные и звук музея не трогают.
+*/
+function isVideoWithSoundOpen() {
+  if (
+    document.querySelector("#cinema-viewer:not([hidden])")
+  ) {
+    return true;
+  }
+
+  for (const id of ["room02-video-overlay", "room03-video-overlay"]) {
+    const overlay = document.getElementById(id);
+
+    if (overlay && overlay.style.display === "flex") {
+      return true;
+    }
+  }
+
+  for (const video of document.querySelectorAll("video")) {
+    if (!video.paused && !video.muted && video.volume > 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function watchVideos() {
+  const ducked = isVideoWithSoundOpen();
+
+  if (ducked !== videoDucked) {
+    videoDucked = ducked;
+    updateMasterGain();
+  }
 }
 
 // Шаги считаем по пройденному пути камеры
@@ -358,9 +413,7 @@ function setEnabled(value) {
     start();
   }
 
-  if (master && ctx) {
-    master.gain.setTargetAtTime(value ? 1 : 0, ctx.currentTime, 0.1);
-  }
+  updateMasterGain();
 
   const button = document.getElementById("museum-sound-button");
 
@@ -472,6 +525,16 @@ export function setupSound() {
   });
 
   requestAnimationFrame(trackSteps);
+
+  setInterval(watchVideos, 250);
+
+  if (new URLSearchParams(location.search).has("debug")) {
+    window.__sound = {
+      get ducked() { return videoDucked; },
+      get gain() { return master ? master.gain.value : null; },
+      get state() { return ctx ? ctx.state : "not started"; }
+    };
+  }
 }
 
 // Удобный вызов из других модулей
