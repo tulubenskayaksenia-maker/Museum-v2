@@ -18,7 +18,7 @@
 // Чтобы временно выключить все столкновения с предметами:
 //   поставь COLLISIONS_ENABLED = false.
 
-import { THREE } from "../core/scene.js?v=b43ba13";
+import { THREE } from "../core/scene.js?v=2368a10";
 
 export const COLLISIONS_ENABLED = true;
 

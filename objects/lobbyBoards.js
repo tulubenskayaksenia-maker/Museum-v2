@@ -7,7 +7,7 @@
 // и афиша будущих выставок напротив (левая стена).
 // По клику открываются окна: крупная схема / open call.
 
-import { THREE } from "../core/scene.js?v=b43ba13";
+import { THREE } from "../core/scene.js?v=2368a10";
 
 const INK = "#efefef";
 const MUTED = "rgba(239, 239, 239, 0.55)";
@@ -146,6 +146,29 @@ function drawMap() {
   ctx.translate(92, 1010);
   ctx.rotate(-Math.PI / 2);
   spaced(ctx, "EXIT TO LOBBY", 0, 0, 20, MUTED, 300, 0.3, "center");
+  ctx.restore();
+
+  // Fire exit at the far end of the corridor → spiral stairs to the lobby
+  ctx.save();
+  ctx.setLineDash([16, 14]);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(43, 209, 126, 0.85)";
+  ctx.beginPath();
+  ctx.moveTo(cx + corW / 2, corTop + 40);
+  ctx.lineTo(W - 120, corTop + 40);
+  ctx.lineTo(W - 120, 1500);
+  ctx.lineTo(W - 260, 1500);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.fillStyle = "#0f8a4b";
+  ctx.fillRect(cx + corW / 2 + 40, corTop + 6, 220, 68);
+  spaced(ctx, "FIRE EXIT", cx + corW / 2 + 150, corTop + 40, 22, "#ffffff", 600, 0.2, "center");
+
+  ctx.save();
+  ctx.translate(W - 92, 1010);
+  ctx.rotate(Math.PI / 2);
+  spaced(ctx, "SPIRAL STAIRS TO LOBBY", 0, 0, 20, "rgba(43, 209, 126, 0.9)", 300, 0.3, "center");
   ctx.restore();
 
   // Stairs

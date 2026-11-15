@@ -1,25 +1,29 @@
 import {
   THREE,
   scene
-} from "../core/scene.js?v=b43ba13";
+} from "../core/scene.js?v=2368a10";
 
 import {
   floorMaterial,
   wallMaterial
-} from "../core/materials.js?v=b43ba13";
+} from "../core/materials.js?v=2368a10";
 
 import {
   createArchPortal
-} from "../objects/arch.js?v=b43ba13";
+} from "../objects/arch.js?v=2368a10";
 
 import {
   LEVELS,
   ROOM
-} from "../config/layout.js?v=b43ba13";
+} from "../config/layout.js?v=2368a10";
 
 import {
   getLandingLevel
-} from "../objects/stairs.js?v=b43ba13";
+} from "../objects/stairs.js?v=2368a10";
+
+import {
+  createFireExitDoor
+} from "./fireStairs.js?v=2368a10";
 
 // =====================================================
 // CONTINUOUS CORRIDOR
@@ -179,6 +183,9 @@ export function createCorridor() {
 
     corridor.add(portal);
   });
+
+  // Пожарный выход в самом конце коридора (правая стена)
+  createFireExitDoor(corridor);
 
   // ===================================================
   // SHADOWS

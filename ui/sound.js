@@ -11,7 +11,7 @@
 //  - скрип двери кабинки, щелчок при открытии окон.
 // Кнопка со значком динамика включает и выключает звук.
 
-import { camera } from "../core/scene.js?v=b43ba13";
+import { camera } from "../core/scene.js?v=2368a10";
 
 const STORAGE_KEY = "incognito-sound";
 
@@ -40,6 +40,8 @@ const ROOM_SOUND = {
   menWC: { filter: 700, ambient: 0.03, reverb: 1.6, wet: 0.3, hum: 0 },
   room04: { filter: 220, ambient: 0.04, reverb: 1.0, wet: 0.12, hum: 0.025 },
   shop: { filter: 650, ambient: 0.035, reverb: 1.3, wet: 0.2, hum: 0 },
+  // Космос: почти тишина, очень долгое эхо
+  fireStairs: { filter: 140, ambient: 0.05, reverb: 5.5, wet: 0.55, hum: 0 },
   default: { filter: 480, ambient: 0.045, reverb: 2.0, wet: 0.26, hum: 0 }
 };
 
@@ -179,9 +181,56 @@ function out(node, wet = true) {
   }
 }
 
+// Шаг по металлической ступеньке: звонкий удар с призвуком
+function playMetalStep() {
+  const t = ctx.currentTime;
+  stepSide = 1 - stepSide;
+
+  const src = ctx.createBufferSource();
+  src.buffer = noiseBuffer(0.08);
+
+  const band = ctx.createBiquadFilter();
+  band.type = "bandpass";
+  band.frequency.value = 2300 + Math.random() * 600;
+  band.Q.value = 3;
+
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.14, t + 0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+
+  src.connect(band);
+  band.connect(g);
+  out(g);
+  src.start(t);
+  src.stop(t + 0.09);
+
+  // Металлический призвук ступени
+  for (const [freq, level] of [[620 + stepSide * 40, 0.05], [1530 + Math.random() * 80, 0.025]]) {
+    const ring = ctx.createOscillator();
+    ring.type = "sine";
+    ring.frequency.value = freq;
+
+    const rg = ctx.createGain();
+    rg.gain.setValueAtTime(0.0001, t);
+    rg.gain.exponentialRampToValueAtTime(level, t + 0.005);
+    rg.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+
+    ring.connect(rg);
+    out(rg);
+    ring.start(t);
+    ring.stop(t + 0.5);
+  }
+}
+
 // Шаг: щелчок каблука + мягкий низкий удар
 function playStep() {
   if (!ctx || !enabled || videoDucked) {
+    return;
+  }
+
+  if (currentRoom === "fireStairs") {
+    playMetalStep();
     return;
   }
 
@@ -399,7 +448,10 @@ function trackSteps() {
 
   stepDistance += moved;
 
-  if (stepDistance > 1.9) {
+  const stride =
+    currentRoom === "fireStairs" ? 0.95 : 1.9;
+
+  if (stepDistance > stride) {
     stepDistance = 0;
     playStep();
   }

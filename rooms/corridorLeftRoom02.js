@@ -3,19 +3,19 @@ import {
   scene,
   camera,
   renderer
-} from "../core/scene.js?v=b43ba13";
+} from "../core/scene.js?v=2368a10";
 
-import { getAimPoint } from "../core/aim.js?v=b43ba13";
+import { getAimPoint } from "../core/aim.js?v=2368a10";
 
 import {
   floorMaterial,
   wallMaterial
-} from "../core/materials.js?v=b43ba13";
+} from "../core/materials.js?v=2368a10";
 
 import {
   createArchPortal,
   createWallWithArchOpening
-} from "../objects/arch.js?v=b43ba13";
+} from "../objects/arch.js?v=2368a10";
 
 
 // =====================================================

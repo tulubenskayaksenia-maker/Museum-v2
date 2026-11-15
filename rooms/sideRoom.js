@@ -1,5 +1,5 @@
-import { THREE, scene } from "../core/scene.js?v=b43ba13";
-import { floorMaterial, wallMaterial } from "../core/materials.js?v=b43ba13";
+import { THREE, scene } from "../core/scene.js?v=2368a10";
+import { floorMaterial, wallMaterial } from "../core/materials.js?v=2368a10";
 
 export function createSideRoom(name = "Side Room") {
   const room = new THREE.Group();

@@ -1,11 +1,11 @@
 import {
   THREE
-} from "../core/scene.js?v=b43ba13";
+} from "../core/scene.js?v=2368a10";
 
 import {
   createSignTexture,
   createSignFaceMaterial
-} from "./signText.js?v=b43ba13";
+} from "./signText.js?v=2368a10";
 
 export function createSculptureSign(parent) {
   const root =

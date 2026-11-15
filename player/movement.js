@@ -1,50 +1,56 @@
 import {
   resolveCollisions
-} from "./collision.js?v=b43ba13";
+} from "./collision.js?v=2368a10";
 import {
   THREE,
   camera,
   renderer
-} from "../core/scene.js?v=b43ba13";
+} from "../core/scene.js?v=2368a10";
 
 import {
   USE_POINTER_LOCK
-} from "../core/aim.js?v=b43ba13";
+} from "../core/aim.js?v=2368a10";
 
 import {
   openTicketMenu,
   closeTicketMenu,
   isTicketMenuOpen,
   hasTicket
-} from "../ui/ticketMenu.js?v=b43ba13";
+} from "../ui/ticketMenu.js?v=2368a10";
 
 import {
   openArtwork,
   closeArtwork,
   isArtworkOpen
-} from "../objects/artwork.js?v=b43ba13";
+} from "../objects/artwork.js?v=2368a10";
 
 import {
   isMainGateOpen,
   requestMainGateOpening
-} from "../objects/door.js?v=b43ba13";
+} from "../objects/door.js?v=2368a10";
 
 import {
   openArtistIntro,
   isArtistIntroOpen
-} from "../ui/artistIntro.js?v=b43ba13";
+} from "../ui/artistIntro.js?v=2368a10";
 
 import {
   openShopMenu,
   closeShopMenu,
   isShopMenuOpen
-} from "../ui/shopMenu.js?v=b43ba13";
+} from "../ui/shopMenu.js?v=2368a10";
 
 import {
   openInfoBoard,
   closeInfoBoard,
   isInfoBoardOpen
-} from "../ui/infoBoards.js?v=b43ba13";
+} from "../ui/infoBoards.js?v=2368a10";
+
+import {
+  startFireStairsRide,
+  stopFireStairsRide,
+  isFireStairsRiding
+} from "../rooms/fireStairs.js?v=2368a10";
 
 
 // =====================================================
@@ -245,6 +251,7 @@ const ROOM_EYE_HEIGHTS = {
   room06: 2.9,
 
   shop: 2.9,
+  fireStairs: 2.9,
 
   womenWC: 2.9,
   menWC: 2.9
@@ -529,6 +536,15 @@ const ROOM_LIMITS = {
     maxX: 15
   },
 
+  // Лестница: камерой управляет спуск (rooms/fireStairs.js)
+  fireStairs: {
+    startZ: 0,
+    endZ: -1,
+
+    minX: -1,
+    maxX: 1
+  },
+
   // Магазин: появляемся за аркой входа (z≈8.6–9.6)
   shop: {
     startZ: 7.5,
@@ -725,6 +741,7 @@ function isInterfaceElement(
         "#museum-invite",
         "#shop-menu",
         "#info-board-menu",
+        "#fire-stairs-skip",
         "#ticket-menu",
         "#artist-intro",
         "#cinema-viewer",
@@ -2325,6 +2342,42 @@ function performPrimaryAction() {
       }
     }
 
+    // Пожарный выход: автоматический спуск по винтовой лестнице,
+    // в конце — сразу в лобби
+    if (targetRoom === "fireStairs") {
+      clearInputState();
+
+      goToRoom("fireStairs");
+
+      startFireStairsRide(() => {
+        goToRoom("entrance");
+
+        navigationHistory.length = 0;
+
+        updateMobileBackButton();
+        broadcastNavigationState();
+      });
+
+      return true;
+    }
+
+    // Нижняя дверь лестницы — тоже в лобби
+    if (
+      currentRoom === "fireStairs" &&
+      targetRoom === "entrance"
+    ) {
+      clearInputState();
+
+      goToRoom("entrance");
+
+      navigationHistory.length = 0;
+
+      updateMobileBackButton();
+      broadcastNavigationState();
+
+      return true;
+    }
+
     // Из магазина — сразу в лобби, без обратной дороги по коридору
     if (
       currentRoom === "shop" &&
@@ -3242,6 +3295,10 @@ function updateContinuousEntranceCorridor() {
 function goToRoom(
   roomName
 ) {
+  if (roomName !== "fireStairs") {
+    stopFireStairsRide();
+  }
+
   const room =
     rooms[roomName];
 
@@ -3371,6 +3428,8 @@ function handleBackAction() {
 // =====================================================
 
 function returnToPreviousSpace() {
+  stopFireStairsRide();
+
   const previousState =
     navigationHistory.pop();
 
@@ -4183,6 +4242,15 @@ export function updateMovement() {
   updateInterfaceHints(
     currentTime
   );
+
+  // Спуск по пожарной лестнице: камерой управляет сам спуск
+  if (isFireStairsRiding()) {
+    currentVelocityX = 0;
+    currentVelocityZ = 0;
+    currentMoveSpeed = 0;
+
+    return;
+  }
 
   if (isInteractionBlocked()) {
     currentVelocityX =
