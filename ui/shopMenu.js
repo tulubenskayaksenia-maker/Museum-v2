@@ -41,6 +41,10 @@ export function openShopMenu() {
     return;
   }
 
+  window.dispatchEvent(
+    new CustomEvent("museum-sound", { detail: { type: "click" } })
+  );
+
   menuOpen = true;
   menuElement.classList.add("visible");
   menuElement.setAttribute("aria-hidden", "false");

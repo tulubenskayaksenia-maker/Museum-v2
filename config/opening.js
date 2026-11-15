@@ -21,3 +21,7 @@ export const INVITE_ENDPOINT =
 // Чтобы снова увидеть экран приглашения: ?preview=off
 export const PREVIEW_KEY =
   "incognito-2311";
+
+// Почта для связи на афише (open call). Пусто — строка не показывается.
+export const CONTACT_EMAIL =
+  "";

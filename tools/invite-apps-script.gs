@@ -49,6 +49,12 @@ const REMINDER_STOP = new Date("2026-11-24T00:00:00+02:00");
 
 function doPost(e) {
   const p = (e && e.parameter) || {};
+
+  // Заявка художника с афиши (open call)
+  if (p.kind === "application") {
+    return handleApplication_(p);
+  }
+
   const email = String(p.email || "").trim().toLowerCase();
   const name = String(p.name || "").trim().slice(0, 80);
   const timezone = String(p.timezone || "").slice(0, 60);
@@ -342,6 +348,73 @@ function sendPendingReminders_() {
 
     sheet.getRange(i + 1, COL_REMINDER).setValue(new Date());
   }
+}
+
+// ---------- ЗАЯВКИ ХУДОЖНИКОВ (OPEN CALL) ----------
+
+const APPLICATIONS_SHEET = "Applications";
+
+function handleApplication_(p) {
+  const name = String(p.name || "").trim().slice(0, 80);
+  const email = String(p.email || "").trim().toLowerCase().slice(0, 120);
+  const link = String(p.link || "").trim().slice(0, 300);
+  const about = String(p.about || "").trim().slice(0, 1000);
+
+  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return reply_("invalid");
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+
+  try {
+    const ss = getSheet_().getParent();
+    let sheet = ss.getSheetByName(APPLICATIONS_SHEET);
+
+    if (!sheet) {
+      sheet = ss.insertSheet(APPLICATIONS_SHEET);
+      sheet.appendRow(["Received", "Name", "Email", "Link", "About"]);
+      sheet.setFrozenRows(1);
+    }
+
+    sheet.appendRow([new Date(), name, email, link, about]);
+  } finally {
+    lock.releaseLock();
+  }
+
+  // Письмо тебе: новая заявка
+  if (MailApp.getRemainingDailyQuota() > 1) {
+    try {
+      MailApp.sendEmail({
+        to: Session.getEffectiveUser().getEmail(),
+        name: SENDER_NAME,
+        replyTo: email,
+        subject: "Open call: new application from " + name,
+        body:
+          "Name: " + name + "\n" +
+          "Email: " + email + "\n" +
+          "Link: " + (link || "-") + "\n\n" +
+          (about || "(no description)") + "\n\n" +
+          "Reply to this email to answer the artist."
+      });
+
+      // Подтверждение художнику
+      MailApp.sendEmail({
+        to: email,
+        name: SENDER_NAME,
+        subject: "We got your application",
+        body:
+          "Hi " + name + ",\n\n" +
+          "thank you for applying to show your work at Incognito Museum. " +
+          "We read every application and will write back to this address.\n\n" +
+          SIGNATURE
+      });
+    } catch (err) {
+      console.warn("Application mail failed: " + err);
+    }
+  }
+
+  return reply_("ok");
 }
 
 // ---------- СЛУЖЕБНОЕ ----------

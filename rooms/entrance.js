@@ -31,6 +31,10 @@ import {
   createFacilitySign
 } from "../objects/facilitySign.js";
 
+import {
+  createLobbyBoards
+} from "../objects/lobbyBoards.js";
+
 export function createEntrance() {
   const entrance =
     new THREE.Group();
@@ -57,6 +61,9 @@ export function createEntrance() {
   // Перпендикулярная вывеска
   // WARDROBE · WC слева
   createFacilitySign(entrance);
+
+  // Схема музея у касс и афиша будущих выставок напротив
+  createLobbyBoards(entrance);
 
   scene.add(entrance);
 

@@ -1427,6 +1427,10 @@ function createCabin({
   const toggle = () => {
     doorState.open = !doorState.open;
 
+    window.dispatchEvent(
+      new CustomEvent("museum-sound", { detail: { type: "creak" } })
+    );
+
     if (!doorState.animating) {
       doorState.animating = true;
       requestAnimationFrame(animateDoor);

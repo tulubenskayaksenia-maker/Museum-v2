@@ -40,6 +40,12 @@ import {
   isShopMenuOpen
 } from "../ui/shopMenu.js";
 
+import {
+  openInfoBoard,
+  closeInfoBoard,
+  isInfoBoardOpen
+} from "../ui/infoBoards.js";
+
 
 // =====================================================
 // THREE.JS HELPERS
@@ -718,6 +724,7 @@ function isInterfaceElement(
       [
         "#museum-invite",
         "#shop-menu",
+        "#info-board-menu",
         "#ticket-menu",
         "#artist-intro",
         "#cinema-viewer",
@@ -761,6 +768,7 @@ const OVERLAY_OPEN_SELECTOR = [
   "#museum-instructions.visible",
   "#ticket-menu.visible",
   "#shop-menu.visible",
+  "#info-board-menu.visible",
   "#artist-intro:not([hidden])",
   "#cinema-viewer:not([hidden])",
   "#sculpture-viewer.visible"
@@ -1238,6 +1246,7 @@ function isInteractionBlocked() {
   return (
     isTicketMenuOpen() ||
     isShopMenuOpen() ||
+    isInfoBoardOpen() ||
     isArtworkOpen() ||
     isArtistIntroOpen() ||
     isOnboardingVisible() ||
@@ -1747,7 +1756,9 @@ function broadcastNavigationState() {
       {
         detail: {
           canGoBack:
-            navigationHistory.length > 0
+            navigationHistory.length > 0,
+
+          room: currentRoom
         }
       }
     )
@@ -2216,6 +2227,20 @@ function performPrimaryAction() {
     return true;
   }
 
+  // Схема музея / афиша в лобби
+  if (
+    interactiveObject?.userData.type ===
+    "infoBoard"
+  ) {
+    clearInputState();
+
+    openInfoBoard(
+      interactiveObject.userData.board
+    );
+
+    return true;
+  }
+
   // Прилавок или стенд со стикерами в магазине
   if (
     interactiveObject?.userData.type ===
@@ -2432,7 +2457,8 @@ function getInteractiveObject() {
         type === "ticketComputer" ||
         type === "artwork" ||
         type === "cabinDoor" ||
-        type === "shopCounter"
+        type === "shopCounter" ||
+        type === "infoBoard"
       ) {
         return object;
       }
@@ -3312,6 +3338,12 @@ function handleBackAction() {
     return;
   }
 
+  if (isInfoBoardOpen()) {
+    closeInfoBoard();
+
+    return;
+  }
+
   if (isTicketMenuOpen()) {
     closeTicketMenu();
 
@@ -3451,6 +3483,7 @@ function updateCursor() {
   if (
     isTicketMenuOpen() ||
     isShopMenuOpen() ||
+    isInfoBoardOpen() ||
     isArtistIntroOpen() ||
     isOnboardingVisible() ||
     isInstructionsVisible()
@@ -3539,7 +3572,8 @@ function updateCursor() {
   if (
     type === "door" ||
     type === "cabinDoor" ||
-    type === "shopCounter"
+    type === "shopCounter" ||
+    type === "infoBoard"
   ) {
     document.body.style.cursor =
       "pointer";

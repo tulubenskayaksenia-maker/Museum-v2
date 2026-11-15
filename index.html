@@ -703,6 +703,61 @@
 
   </div>
 
+
+  <!-- ===============================================
+       LOBBY BOARDS: MAP + OPEN CALL
+  ================================================ -->
+
+  <div id="info-board-menu" aria-hidden="true">
+
+    <div
+      class="ticket-window info-board-window"
+      role="dialog"
+      aria-modal="true"
+    >
+
+      <button id="info-board-close" type="button" aria-label="Close">
+        ×
+      </button>
+
+      <!-- Схема музея -->
+      <div class="info-board-panel" data-board="map">
+        <img class="info-board-map" alt="Map of Incognito Museum" />
+      </div>
+
+      <!-- Open call -->
+      <div class="info-board-panel" data-board="exhibitions">
+        <div class="ticket-label">
+          OPEN CALL
+        </div>
+
+        <h2>
+          Show your work at Incognito Museum
+        </h2>
+
+        <p class="ticket-description">
+          We are putting together the next exhibitions: painting, photography,
+          video, film, sculpture. Tell us about your work and we'll answer by email.
+        </p>
+
+        <form class="open-call-form" novalidate onsubmit="event.preventDefault()">
+          <input type="text" name="name" placeholder="Your name" autocomplete="name" maxlength="80" required />
+          <input type="email" name="email" placeholder="Email" autocomplete="email" inputmode="email" maxlength="120" required />
+          <input type="url" name="link" placeholder="Link to your work (portfolio, Instagram, website)" maxlength="300" />
+          <textarea name="about" rows="4" maxlength="1000" placeholder="A few words about the work you'd like to show"></textarea>
+          <input class="museum-invite-trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <button type="submit">SEND APPLICATION</button>
+        </form>
+
+        <div class="open-call-status" role="status"></div>
+
+        <p class="open-call-contact" hidden></p>
+      </div>
+
+    </div>
+
+  </div>
+
   <!-- ===============================================
        THREE.JS
   ================================================ -->

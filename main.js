@@ -58,6 +58,14 @@ import {
 } from "./ui/shopMenu.js";
 
 import {
+  setupInfoBoards
+} from "./ui/infoBoards.js";
+
+import {
+  setupSound
+} from "./ui/sound.js";
+
+import {
   createCorridorSigns
 } from "./objects/corridorSigns.js";
 
@@ -122,6 +130,8 @@ if (museumLocked) {
 
 setupTicketMenu();
 setupShopMenu();
+setupInfoBoards();
+setupSound();
 setupCinemaViewer();
 setupSculptureViewer();
 setupMobileControls();
