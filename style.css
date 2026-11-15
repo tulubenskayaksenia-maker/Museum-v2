@@ -1658,3 +1658,112 @@ body.museum-locked > :not(#museum-invite):not(canvas):not(script) {
 .museum-invite-again:hover {
   color: #f3f1eb;
 }
+
+/* =====================================================
+   MUSEUM SHOP WINDOW (тот же стиль, что у окна билета)
+===================================================== */
+
+#shop-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(2, 3, 5, 0.8);
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    opacity 0.12s ease,
+    visibility 0.12s ease;
+}
+
+#shop-menu.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+#shop-menu.visible .ticket-window {
+  transform: translateY(0) scale(1);
+}
+
+#shop-menu-close {
+  position: absolute;
+  top: 14px;
+  right: 17px;
+
+  width: 34px;
+  height: 34px;
+  padding: 0;
+
+  color: rgba(255, 255, 255, 0.72);
+  background: transparent;
+  border: 0;
+
+  font-size: 27px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+}
+
+.shop-stickers {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.shop-stickers .ticket-description {
+  margin-bottom: 22px;
+}
+
+.shop-sticker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.shop-sticker {
+  display: block;
+  padding: 8px;
+
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.shop-sticker:hover {
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateY(-2px);
+}
+
+.shop-sticker img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.shop-download-all {
+  margin-top: 18px;
+}
+
+@media (max-width: 760px) {
+  #shop-menu {
+    padding: 12px;
+  }
+}
+
+/* Окна магазина и билета — поверх кнопок управления (BACK, джойстик, «?») */
+#shop-menu,
+#ticket-menu {
+  z-index: 9600;
+}

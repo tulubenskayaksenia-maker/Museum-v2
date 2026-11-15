@@ -50,6 +50,14 @@ import {
 } from "./rooms/cinemaRoom.js";
 
 import {
+  createShopRoom
+} from "./rooms/shopRoom.js";
+
+import {
+  setupShopMenu
+} from "./ui/shopMenu.js";
+
+import {
   createCorridorSigns
 } from "./objects/corridorSigns.js";
 
@@ -113,6 +121,7 @@ if (museumLocked) {
 }
 
 setupTicketMenu();
+setupShopMenu();
 setupCinemaViewer();
 setupSculptureViewer();
 setupMobileControls();
@@ -223,6 +232,10 @@ const room06 =
     "Room 06"
   );
 
+// Магазин в конце галерей
+const shop =
+  createShopRoom();
+
 // =====================================================
 // MOVEMENT
 // =====================================================
@@ -242,7 +255,9 @@ setupMovement({
   room03,
   room04,
   room05,
-  room06
+  room06,
+
+  shop
 });
 
 // =====================================================

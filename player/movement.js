@@ -34,6 +34,12 @@ import {
   isArtistIntroOpen
 } from "../ui/artistIntro.js";
 
+import {
+  openShopMenu,
+  closeShopMenu,
+  isShopMenuOpen
+} from "../ui/shopMenu.js";
+
 
 // =====================================================
 // THREE.JS HELPERS
@@ -231,6 +237,8 @@ const ROOM_EYE_HEIGHTS = {
   room04: 2.9,
   room05: 2.9,
   room06: 2.9,
+
+  shop: 2.9,
 
   womenWC: 2.9,
   menWC: 2.9
@@ -513,6 +521,15 @@ const ROOM_LIMITS = {
 
     minX: -15,
     maxX: 15
+  },
+
+  // Магазин: появляемся за аркой входа (z≈8.6–9.6)
+  shop: {
+    startZ: 7.5,
+    endZ: -6.8,
+
+    minX: -9.4,
+    maxX: 9.4
   }
 };
 
@@ -700,6 +717,7 @@ function isInterfaceElement(
     target.closest(
       [
         "#museum-invite",
+        "#shop-menu",
         "#ticket-menu",
         "#artist-intro",
         "#cinema-viewer",
@@ -742,6 +760,7 @@ const OVERLAY_OPEN_SELECTOR = [
   "#museum-onboarding.visible",
   "#museum-instructions.visible",
   "#ticket-menu.visible",
+  "#shop-menu.visible",
   "#artist-intro:not([hidden])",
   "#cinema-viewer:not([hidden])",
   "#sculpture-viewer.visible"
@@ -1218,6 +1237,7 @@ function isInstructionsVisible() {
 function isInteractionBlocked() {
   return (
     isTicketMenuOpen() ||
+    isShopMenuOpen() ||
     isArtworkOpen() ||
     isArtistIntroOpen() ||
     isOnboardingVisible() ||
@@ -2196,6 +2216,18 @@ function performPrimaryAction() {
     return true;
   }
 
+  // Прилавок или стенд со стикерами в магазине
+  if (
+    interactiveObject?.userData.type ===
+    "shopCounter"
+  ) {
+    clearInputState();
+
+    openShopMenu();
+
+    return true;
+  }
+
   // Дверь кабинки в туалете: открыть / закрыть одним кликом
   if (
     interactiveObject?.userData.type ===
@@ -2266,6 +2298,23 @@ function performPrimaryAction() {
 
         return true;
       }
+    }
+
+    // Из магазина — сразу в лобби, без обратной дороги по коридору
+    if (
+      currentRoom === "shop" &&
+      targetRoom === "entrance"
+    ) {
+      clearInputState();
+
+      goToRoom("entrance");
+
+      navigationHistory.length = 0;
+
+      updateMobileBackButton();
+      broadcastNavigationState();
+
+      return true;
     }
 
     if (
@@ -2382,7 +2431,8 @@ function getInteractiveObject() {
         type === "door" ||
         type === "ticketComputer" ||
         type === "artwork" ||
-        type === "cabinDoor"
+        type === "cabinDoor" ||
+        type === "shopCounter"
       ) {
         return object;
       }
@@ -3256,6 +3306,12 @@ function handleBackAction() {
     return;
   }
 
+  if (isShopMenuOpen()) {
+    closeShopMenu();
+
+    return;
+  }
+
   if (isTicketMenuOpen()) {
     closeTicketMenu();
 
@@ -3394,6 +3450,7 @@ function updateCursor() {
 
   if (
     isTicketMenuOpen() ||
+    isShopMenuOpen() ||
     isArtistIntroOpen() ||
     isOnboardingVisible() ||
     isInstructionsVisible()
@@ -3481,7 +3538,8 @@ function updateCursor() {
 
   if (
     type === "door" ||
-    type === "cabinDoor"
+    type === "cabinDoor" ||
+    type === "shopCounter"
   ) {
     document.body.style.cursor =
       "pointer";

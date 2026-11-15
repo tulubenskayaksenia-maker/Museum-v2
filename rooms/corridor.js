@@ -143,6 +143,11 @@ export function createCorridor() {
       side: "right",
       z: -34,
       target: "room04"
+    },
+    {
+      side: "left",
+      z: -52,
+      target: "shop"
     }
   ];
 

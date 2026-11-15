@@ -91,6 +91,16 @@ export function createCorridorSigns(parent) {
     z: -34
   });
 
+  createBladeSign({
+    parent: signsRoot,
+
+    label: "SHOP",
+
+    side: "left",
+
+    z: -52
+  });
+
   parent.add(signsRoot);
 
   return signsRoot;
