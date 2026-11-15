@@ -11,7 +11,7 @@
 //  - скрип двери кабинки, щелчок при открытии окон.
 // Кнопка со значком динамика включает и выключает звук.
 
-import { camera } from "../core/scene.js?v=2368a10";
+import { camera } from "../core/scene.js?v=384ad6f";
 
 const STORAGE_KEY = "incognito-sound";
 
@@ -440,6 +440,12 @@ function trackSteps() {
   lastPos.y = p.y;
   lastPos.z = p.z;
 
+  // На лестнице шаги считает сама лестница (камера там летит «с дрона»)
+  if (currentRoom === "fireStairs") {
+    stepDistance = 0;
+    return;
+  }
+
   // Скачок при смене зала — не шаг
   if (moved > 3) {
     stepDistance = 0;
@@ -573,6 +579,7 @@ export function setupSound() {
     const type = event.detail?.type;
 
     if (type === "creak") playCreak();
+    if (type === "metalStep") playStep();
     if (type === "click") playClick();
   });
 

@@ -1,56 +1,56 @@
 import {
   resolveCollisions
-} from "./collision.js?v=2368a10";
+} from "./collision.js?v=384ad6f";
 import {
   THREE,
   camera,
   renderer
-} from "../core/scene.js?v=2368a10";
+} from "../core/scene.js?v=384ad6f";
 
 import {
   USE_POINTER_LOCK
-} from "../core/aim.js?v=2368a10";
+} from "../core/aim.js?v=384ad6f";
 
 import {
   openTicketMenu,
   closeTicketMenu,
   isTicketMenuOpen,
   hasTicket
-} from "../ui/ticketMenu.js?v=2368a10";
+} from "../ui/ticketMenu.js?v=384ad6f";
 
 import {
   openArtwork,
   closeArtwork,
   isArtworkOpen
-} from "../objects/artwork.js?v=2368a10";
+} from "../objects/artwork.js?v=384ad6f";
 
 import {
   isMainGateOpen,
   requestMainGateOpening
-} from "../objects/door.js?v=2368a10";
+} from "../objects/door.js?v=384ad6f";
 
 import {
   openArtistIntro,
   isArtistIntroOpen
-} from "../ui/artistIntro.js?v=2368a10";
+} from "../ui/artistIntro.js?v=384ad6f";
 
 import {
   openShopMenu,
   closeShopMenu,
   isShopMenuOpen
-} from "../ui/shopMenu.js?v=2368a10";
+} from "../ui/shopMenu.js?v=384ad6f";
 
 import {
   openInfoBoard,
   closeInfoBoard,
   isInfoBoardOpen
-} from "../ui/infoBoards.js?v=2368a10";
+} from "../ui/infoBoards.js?v=384ad6f";
 
 import {
   startFireStairsRide,
   stopFireStairsRide,
   isFireStairsRiding
-} from "../rooms/fireStairs.js?v=2368a10";
+} from "../rooms/fireStairs.js?v=384ad6f";
 
 
 // =====================================================
@@ -2349,14 +2349,8 @@ function performPrimaryAction() {
 
       goToRoom("fireStairs");
 
-      startFireStairsRide(() => {
-        goToRoom("entrance");
-
-        navigationHistory.length = 0;
-
-        updateMobileBackButton();
-        broadcastNavigationState();
-      });
+      // Спуск заканчивается у двери LOBBY — её посетитель нажимает сам
+      startFireStairsRide();
 
       return true;
     }

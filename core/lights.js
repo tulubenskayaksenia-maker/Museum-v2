@@ -1,4 +1,4 @@
-import { THREE, scene } from "./scene.js?v=2368a10";
+import { THREE, scene } from "./scene.js?v=384ad6f";
 
 export function createLights() {
   const ambient = new THREE.AmbientLight(0xffffff, 0.55);

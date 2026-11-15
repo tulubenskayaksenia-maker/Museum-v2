@@ -1,11 +1,11 @@
 import {
   THREE
-} from "../core/scene.js?v=2368a10";
+} from "../core/scene.js?v=384ad6f";
 
 import {
   createSignTexture,
   createSignFaceMaterial
-} from "./signText.js?v=2368a10";
+} from "./signText.js?v=384ad6f";
 
 // =====================================================
 // MATERIALS

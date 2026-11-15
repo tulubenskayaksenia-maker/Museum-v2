@@ -1,29 +1,29 @@
 import {
   THREE,
   scene
-} from "../core/scene.js?v=2368a10";
+} from "../core/scene.js?v=384ad6f";
 
 import {
   floorMaterial,
   wallMaterial
-} from "../core/materials.js?v=2368a10";
+} from "../core/materials.js?v=384ad6f";
 
 import {
   createArchPortal
-} from "../objects/arch.js?v=2368a10";
+} from "../objects/arch.js?v=384ad6f";
 
 import {
   LEVELS,
   ROOM
-} from "../config/layout.js?v=2368a10";
+} from "../config/layout.js?v=384ad6f";
 
 import {
   getLandingLevel
-} from "../objects/stairs.js?v=2368a10";
+} from "../objects/stairs.js?v=384ad6f";
 
 import {
   createFireExitDoor
-} from "./fireStairs.js?v=2368a10";
+} from "./fireStairs.js?v=384ad6f";
 
 // =====================================================
 // CONTINUOUS CORRIDOR

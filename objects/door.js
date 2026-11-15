@@ -1,14 +1,14 @@
 import {
   createArchPortal
-} from "./arch.js?v=2368a10";
+} from "./arch.js?v=384ad6f";
 
 import {
   ROOM
-} from "../config/layout.js?v=2368a10";
+} from "../config/layout.js?v=384ad6f";
 
 import {
   getLandingLevel
-} from "./stairs.js?v=2368a10";
+} from "./stairs.js?v=384ad6f";
 
 // =====================================================
 // MAIN ENTRANCE GATE

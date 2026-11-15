@@ -1,19 +1,19 @@
 import {
   THREE
-} from "../core/scene.js?v=2368a10";
+} from "../core/scene.js?v=384ad6f";
 
 import {
   wallMaterial
-} from "../core/materials.js?v=2368a10";
+} from "../core/materials.js?v=384ad6f";
 
 import {
   LEVELS,
   ROOM
-} from "../config/layout.js?v=2368a10";
+} from "../config/layout.js?v=384ad6f";
 
 import {
   getLandingLevel
-} from "./stairs.js?v=2368a10";
+} from "./stairs.js?v=384ad6f";
 
 // =====================================================
 // ENTRANCE WALLS

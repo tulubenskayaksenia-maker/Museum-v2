@@ -1,13 +1,13 @@
 import {
   THREE,
   scene
-} from "../core/scene.js?v=2368a10";
+} from "../core/scene.js?v=384ad6f";
 
 import {
   floorMaterial,
   wallMaterial,
   darkMaterial
-} from "../core/materials.js?v=2368a10";
+} from "../core/materials.js?v=384ad6f";
 
 // =====================================================
 // MATERIALS

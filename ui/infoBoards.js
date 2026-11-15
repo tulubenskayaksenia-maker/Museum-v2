@@ -3,12 +3,12 @@
 // ui/infoBoards.js
 // =====================================================
 
-import { boardImages } from "../objects/lobbyBoards.js?v=2368a10";
+import { boardImages } from "../objects/lobbyBoards.js?v=384ad6f";
 
 import {
   INVITE_ENDPOINT,
   CONTACT_EMAIL
-} from "../config/opening.js?v=2368a10";
+} from "../config/opening.js?v=384ad6f";
 
 let root = null;
 let open = false;

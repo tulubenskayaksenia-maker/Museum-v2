@@ -7,7 +7,7 @@
 // и афиша будущих выставок напротив (левая стена).
 // По клику открываются окна: крупная схема / open call.
 
-import { THREE } from "../core/scene.js?v=2368a10";
+import { THREE } from "../core/scene.js?v=384ad6f";
 
 const INK = "#efefef";
 const MUTED = "rgba(239, 239, 239, 0.55)";
