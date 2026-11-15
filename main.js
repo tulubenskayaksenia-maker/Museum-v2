@@ -54,6 +54,10 @@ import {
 } from "./rooms/shopRoom.js";
 
 import {
+  createFireStairs
+} from "./rooms/fireStairs.js";
+
+import {
   setupShopMenu
 } from "./ui/shopMenu.js";
 
@@ -246,6 +250,10 @@ const room06 =
 const shop =
   createShopRoom();
 
+// Пожарная винтовая лестница через космос
+const fireStairs =
+  createFireStairs();
+
 // =====================================================
 // MOVEMENT
 // =====================================================
@@ -267,7 +275,9 @@ setupMovement({
   room05,
   room06,
 
-  shop
+  shop,
+
+  fireStairs
 });
 
 // =====================================================

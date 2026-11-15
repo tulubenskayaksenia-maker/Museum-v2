@@ -21,6 +21,10 @@ import {
   getLandingLevel
 } from "../objects/stairs.js";
 
+import {
+  createFireExitDoor
+} from "./fireStairs.js";
+
 // =====================================================
 // CONTINUOUS CORRIDOR
 // =====================================================
@@ -179,6 +183,9 @@ export function createCorridor() {
 
     corridor.add(portal);
   });
+
+  // Пожарный выход в самом конце коридора (правая стена)
+  createFireExitDoor(corridor);
 
   // ===================================================
   // SHADOWS
