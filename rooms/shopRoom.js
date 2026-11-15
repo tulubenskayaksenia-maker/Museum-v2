@@ -10,22 +10,22 @@
 import {
   THREE,
   scene
-} from "../core/scene.js?v=20928d0";
+} from "../core/scene.js?v=7500b44";
 
 import {
   floorMaterial,
   wallMaterial
-} from "../core/materials.js?v=20928d0";
+} from "../core/materials.js?v=7500b44";
 
 import {
   createArchPortal,
   createWallWithArchOpening
-} from "../objects/arch.js?v=20928d0";
+} from "../objects/arch.js?v=7500b44";
 
 import {
   createSignTexture,
   createSignFaceMaterial
-} from "../objects/signText.js?v=20928d0";
+} from "../objects/signText.js?v=7500b44";
 
 export const SHOP_STICKERS = [
   "logo",

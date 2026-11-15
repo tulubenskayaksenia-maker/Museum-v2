@@ -1,4 +1,4 @@
-import { THREE } from "../core/scene.js?v=20928d0";
+import { THREE } from "../core/scene.js?v=7500b44";
 
 export function createLightSpot(parent) {
   const canvas = document.createElement("canvas");

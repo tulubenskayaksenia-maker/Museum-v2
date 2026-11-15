@@ -11,7 +11,7 @@
 //  - скрип двери кабинки, щелчок при открытии окон.
 // Кнопка со значком динамика включает и выключает звук.
 
-import { camera } from "../core/scene.js?v=20928d0";
+import { camera } from "../core/scene.js?v=7500b44";
 
 const STORAGE_KEY = "incognito-sound";
 

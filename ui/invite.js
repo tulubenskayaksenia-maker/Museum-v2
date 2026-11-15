@@ -3,7 +3,7 @@ import {
   OPENING_LABEL,
   INVITE_ENDPOINT,
   PREVIEW_KEY
-} from "../config/opening.js?v=20928d0";
+} from "../config/opening.js?v=7500b44";
 
 const PREVIEW_STORAGE_KEY =
   "incognito-preview";
