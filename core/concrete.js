@@ -17,7 +17,7 @@
 //   bump  — сила рельефа (0 — гладко);
 //   macro — сила крупных пятен.
 
-import { THREE } from "./scene.js";
+import { THREE } from "./scene.js?v=e34eec8";
 
 let sharedTexture = null;
 

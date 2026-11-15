@@ -3,16 +3,16 @@ import {
   scene,
   camera,
   renderer
-} from "../core/scene.js";
+} from "../core/scene.js?v=e34eec8";
 
 
-import { getAimPoint } from "../core/aim.js";
+import { getAimPoint } from "../core/aim.js?v=e34eec8";
 
 import {
   floorMaterial,
   wallMaterial,
   darkMaterial
-} from "../core/materials.js";
+} from "../core/materials.js?v=e34eec8";
 
 // =====================================================
 // МОНОХРОМНАЯ ПАЛИТРА

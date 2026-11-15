@@ -1,39 +1,39 @@
 import {
   THREE,
   scene
-} from "../core/scene.js";
+} from "../core/scene.js?v=e34eec8";
 
 import {
   createFloor
-} from "../objects/floor.js";
+} from "../objects/floor.js?v=e34eec8";
 
 import {
   createWalls
-} from "../objects/wall.js";
+} from "../objects/wall.js?v=e34eec8";
 
 import {
   createStairs
-} from "../objects/stairs.js";
+} from "../objects/stairs.js?v=e34eec8";
 
 import {
   createSideArches
-} from "../objects/arch.js";
+} from "../objects/arch.js?v=e34eec8";
 
 import {
   createMainPortal
-} from "../objects/door.js";
+} from "../objects/door.js?v=e34eec8";
 
 import {
   createTicketBooth
-} from "../objects/ticketBooth.js";
+} from "../objects/ticketBooth.js?v=e34eec8";
 
 import {
   createFacilitySign
-} from "../objects/facilitySign.js";
+} from "../objects/facilitySign.js?v=e34eec8";
 
 import {
   createLobbyBoards
-} from "../objects/lobbyBoards.js";
+} from "../objects/lobbyBoards.js?v=e34eec8";
 
 export function createEntrance() {
   const entrance =

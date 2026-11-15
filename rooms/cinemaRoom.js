@@ -2,15 +2,15 @@ import {
   THREE,
   scene,
   camera
-} from "../core/scene.js";
+} from "../core/scene.js?v=e34eec8";
 
 
-import { getAimPoint } from "../core/aim.js";
+import { getAimPoint } from "../core/aim.js?v=e34eec8";
 
 import {
   openCinemaViewer,
   setCinemaFilm
-} from "../ui/cinemaViewer.js";
+} from "../ui/cinemaViewer.js?v=e34eec8";
 
 // =====================================================
 // MATERIALS

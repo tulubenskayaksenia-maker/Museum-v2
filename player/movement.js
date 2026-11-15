@@ -1,50 +1,50 @@
 import {
   resolveCollisions
-} from "./collision.js";
+} from "./collision.js?v=e34eec8";
 import {
   THREE,
   camera,
   renderer
-} from "../core/scene.js";
+} from "../core/scene.js?v=e34eec8";
 
 import {
   USE_POINTER_LOCK
-} from "../core/aim.js";
+} from "../core/aim.js?v=e34eec8";
 
 import {
   openTicketMenu,
   closeTicketMenu,
   isTicketMenuOpen,
   hasTicket
-} from "../ui/ticketMenu.js";
+} from "../ui/ticketMenu.js?v=e34eec8";
 
 import {
   openArtwork,
   closeArtwork,
   isArtworkOpen
-} from "../objects/artwork.js";
+} from "../objects/artwork.js?v=e34eec8";
 
 import {
   isMainGateOpen,
   requestMainGateOpening
-} from "../objects/door.js";
+} from "../objects/door.js?v=e34eec8";
 
 import {
   openArtistIntro,
   isArtistIntroOpen
-} from "../ui/artistIntro.js";
+} from "../ui/artistIntro.js?v=e34eec8";
 
 import {
   openShopMenu,
   closeShopMenu,
   isShopMenuOpen
-} from "../ui/shopMenu.js";
+} from "../ui/shopMenu.js?v=e34eec8";
 
 import {
   openInfoBoard,
   closeInfoBoard,
   isInfoBoardOpen
-} from "../ui/infoBoards.js";
+} from "../ui/infoBoards.js?v=e34eec8";
 
 
 // =====================================================

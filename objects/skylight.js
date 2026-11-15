@@ -1,4 +1,4 @@
-import { THREE } from "../core/scene.js";
+import { THREE } from "../core/scene.js?v=e34eec8";
 
 export function createSkylight(parent) {
   const skylight = new THREE.Group();
