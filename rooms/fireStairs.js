@@ -17,22 +17,29 @@ import {
   THREE,
   scene,
   camera
-} from "../core/scene.js?v=384ad6f";
+} from "../core/scene.js?v=20928d0";
 
 import {
   createStarMap
-} from "../objects/starMap.js?v=384ad6f";
+} from "../objects/starMap.js?v=20928d0";
 
 // ---------- Параметры лестницы ----------
+//
+// Широкая спиральная лестница вокруг открытого колодца:
+// полтора витка большого радиуса — поворот при ходьбе медленный,
+// поэтому голова не кружится. Идём по середине ступеней.
 
-const STEP_COUNT = 96;
-const STEP_ANGLE = 0.17;   // ≈ 2.6 витка, без резких поворотов
-const STEP_RISE = 0.3;
-const INNER_R = 0.45;
-const OUTER_R = 3.8;
+const STEP_COUNT = 90;
+const TURNS = 1.5;
+const STEP_ANGLE = (TURNS * Math.PI * 2) / STEP_COUNT;
+const STEP_RISE = 0.32;
+const INNER_R = 3.6;       // открытый колодец в центре
+const OUTER_R = 6.8;
+const WALK_R = 5.2;        // где идёт посетитель
+const EYE = 2.9;
 const RAIL_H = 1.7;
 const TOTAL_DROP = STEP_COUNT * STEP_RISE;
-const RIDE_SECONDS = 18;
+const RIDE_SECONDS = 22;
 
 const metal =
   new THREE.MeshStandardMaterial({
@@ -275,10 +282,28 @@ export function createFireExitDoor(corridor) {
   return door;
 }
 
-// ---------- Винтовая лестница ----------
+// ---------- Спиральная лестница ----------
 
 function stepPose(i) {
   return { angle: i * STEP_ANGLE, y: -i * STEP_RISE };
+}
+
+function helixPoints(radius, height, from = -1, to = STEP_COUNT + 1) {
+  const points = [];
+
+  for (let i = from; i <= to; i += 0.5) {
+    const angle = i * STEP_ANGLE;
+    points.push(new THREE.Vector3(Math.cos(angle) * radius, -i * STEP_RISE + height, Math.sin(angle) * radius));
+  }
+
+  return points;
+}
+
+function tube(points, radius, material) {
+  return new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), points.length * 2, radius, 8, false),
+    material
+  );
 }
 
 let stairsRoom = null;
@@ -289,34 +314,25 @@ export function createFireStairs() {
   room.visible = false;
 
   const stepLength = OUTER_R - INNER_R;
-  const stepWidth = OUTER_R * STEP_ANGLE * 1.15;
+  const stepDepth = WALK_R * STEP_ANGLE * 1.08;
+  const mid = (INNER_R + OUTER_R) / 2;
 
+  // Ступени — перфорированный металл (тёмная кромка спереди)
   const steps =
-    new THREE.InstancedMesh(
-      new THREE.BoxGeometry(stepLength, 0.09, stepWidth),
-      metal,
-      STEP_COUNT
-    );
+    new THREE.InstancedMesh(new THREE.BoxGeometry(stepLength, 0.1, stepDepth), metal, STEP_COUNT);
 
   const nosings =
-    new THREE.InstancedMesh(
-      new THREE.BoxGeometry(stepLength, 0.11, 0.06),
-      darkMetal,
-      STEP_COUNT
-    );
+    new THREE.InstancedMesh(new THREE.BoxGeometry(stepLength, 0.13, 0.08), darkMetal, STEP_COUNT);
 
-  const balusters =
-    new THREE.InstancedMesh(
-      new THREE.CylinderGeometry(0.03, 0.03, RAIL_H, 6),
-      darkMetal,
-      STEP_COUNT
-    );
+  // Стойки перил с обеих сторон
+  const posts =
+    new THREE.InstancedMesh(new THREE.CylinderGeometry(0.035, 0.035, RAIL_H, 6), darkMetal, STEP_COUNT * 2);
 
   const m = new THREE.Matrix4();
   const q = new THREE.Quaternion();
   const up = new THREE.Vector3(0, 1, 0);
   const one = new THREE.Vector3(1, 1, 1);
-  const mid = (INNER_R + OUTER_R) / 2;
+  const noRot = new THREE.Quaternion();
 
   for (let i = 0; i < STEP_COUNT; i++) {
     const { angle, y } = stepPose(i);
@@ -325,58 +341,64 @@ export function createFireStairs() {
     m.compose(new THREE.Vector3(Math.cos(angle) * mid, y, Math.sin(angle) * mid), q, one);
     steps.setMatrixAt(i, m);
 
-    const edge = angle + STEP_ANGLE * 0.5;
-    q.setFromAxisAngle(up, -edge);
-    m.compose(new THREE.Vector3(Math.cos(edge) * mid, y + 0.01, Math.sin(edge) * mid), q, one);
+    const front = angle + STEP_ANGLE * 0.5;
+    q.setFromAxisAngle(up, -front);
+    m.compose(new THREE.Vector3(Math.cos(front) * mid, y + 0.015, Math.sin(front) * mid), q, one);
     nosings.setMatrixAt(i, m);
 
-    m.compose(
-      new THREE.Vector3(
-        Math.cos(angle) * (OUTER_R - 0.08),
-        y + RAIL_H / 2,
-        Math.sin(angle) * (OUTER_R - 0.08)
-      ),
-      new THREE.Quaternion(),
-      one
-    );
-    balusters.setMatrixAt(i, m);
+    for (const [k, r] of [[0, INNER_R + 0.08], [1, OUTER_R - 0.08]]) {
+      m.compose(new THREE.Vector3(Math.cos(angle) * r, y + RAIL_H / 2, Math.sin(angle) * r), noRot, one);
+      posts.setMatrixAt(i * 2 + k, m);
+    }
   }
 
-  room.add(steps, nosings, balusters);
+  room.add(steps, nosings, posts);
 
-  const pole =
-    new THREE.Mesh(
-      new THREE.CylinderGeometry(INNER_R, INNER_R, TOTAL_DROP + 8, 24),
-      darkMetal
-    );
+  // Перила и косоуры (несущие балки под ступенями) по обе стороны
+  room.add(tube(helixPoints(INNER_R + 0.08, RAIL_H), 0.06, metal));
+  room.add(tube(helixPoints(OUTER_R - 0.08, RAIL_H), 0.06, metal));
+  room.add(tube(helixPoints(INNER_R + 0.08, -0.25), 0.14, darkMetal));
+  room.add(tube(helixPoints(OUTER_R - 0.08, -0.25), 0.14, darkMetal));
 
-  pole.position.y = -TOTAL_DROP / 2 + 2;
-  room.add(pole);
+  // Опоры: тонкие вертикальные колонны по внутреннему краю
+  for (let i = 0; i <= STEP_COUNT; i += 15) {
+    const { angle, y } = stepPose(i);
 
-  const railPoints = [];
+    const column =
+      new THREE.Mesh(
+        new THREE.CylinderGeometry(0.09, 0.09, 6, 10),
+        darkMetal
+      );
 
-  for (let i = -2; i <= STEP_COUNT + 2; i++) {
-    const angle = i * STEP_ANGLE;
-    railPoints.push(
-      new THREE.Vector3(
-        Math.cos(angle) * (OUTER_R - 0.08),
-        -i * STEP_RISE + RAIL_H,
-        Math.sin(angle) * (OUTER_R - 0.08)
-      )
-    );
+    column.position.set(Math.cos(angle) * (INNER_R - 0.25), y - 3, Math.sin(angle) * (INNER_R - 0.25));
+    room.add(column);
   }
 
-  room.add(
-    new THREE.Mesh(
-      new THREE.TubeGeometry(new THREE.CatmullRomCurve3(railPoints), STEP_COUNT * 3, 0.06, 8, false),
-      metal
-    )
-  );
+  // Фонари на внутренних перилах
+  room.add(new THREE.HemisphereLight(0xcfd8ff, 0x101015, 0.55));
 
-  // Верхняя площадка и дверь обратно в коридор
+  for (let i = 0; i <= STEP_COUNT; i += 12) {
+    const { angle, y } = stepPose(i);
+    const pos = new THREE.Vector3(Math.cos(angle) * (INNER_R + 0.08), y + RAIL_H + 0.18, Math.sin(angle) * (INNER_R + 0.08));
+
+    const lamp = new THREE.PointLight(i % 24 ? 0xffd9a8 : 0xc9d6ff, 1.1, 10, 1.6);
+    lamp.position.copy(pos);
+    room.add(lamp);
+
+    const bulb =
+      new THREE.Mesh(
+        new THREE.SphereGeometry(0.11, 12, 8),
+        new THREE.MeshBasicMaterial({ color: i % 24 ? 0xffe6c4 : 0xe3eaff })
+      );
+
+    bulb.position.copy(pos);
+    room.add(bulb);
+  }
+
+  // Верхняя площадка и дверь обратно в коридор (за спиной)
   const topLanding =
     new THREE.Mesh(
-      new THREE.CylinderGeometry(OUTER_R + 1.2, OUTER_R + 1.2, 0.12, 40, 1, false, Math.PI * 0.95, Math.PI * 0.75),
+      new THREE.CylinderGeometry(OUTER_R, OUTER_R, 0.12, 48, 1, false, Math.PI / 2 - 0.15, 0.75),
       metal
     );
 
@@ -384,58 +406,40 @@ export function createFireStairs() {
   room.add(topLanding);
 
   const topDoor = createMetalDoor({ target: "corridor" });
-  const topAngle = -STEP_ANGLE * 6;
+  const topAngle = -0.55;
 
-  topDoor.position.set(
-    Math.cos(topAngle) * (OUTER_R + 1.0),
-    STEP_RISE,
-    Math.sin(topAngle) * (OUTER_R + 1.0)
-  );
-  topDoor.lookAt(0, STEP_RISE, 0);
+  topDoor.position.set(Math.cos(topAngle) * WALK_R, STEP_RISE, Math.sin(topAngle) * WALK_R);
+  topDoor.lookAt(Math.cos(topAngle + 1) * WALK_R, STEP_RISE, Math.sin(topAngle + 1) * WALK_R);
   room.add(topDoor);
 
-  // Нижняя площадка и дверь LOBBY
+  // Нижняя площадка и дверь LOBBY прямо по ходу движения
   const last = stepPose(STEP_COUNT - 1);
   const bottomY = last.y - STEP_RISE;
 
   const bottomLanding =
     new THREE.Mesh(
-      new THREE.CylinderGeometry(OUTER_R + 2, OUTER_R + 2, 0.14, 48),
+      new THREE.CylinderGeometry(OUTER_R + 0.6, OUTER_R + 0.6, 0.14, 56),
       metal
     );
 
   bottomLanding.position.y = bottomY;
   room.add(bottomLanding);
 
-  const exitAngle = last.angle + STEP_ANGLE * 7;
-  const doorR = OUTER_R + 1.7;
+  const exitAngle = last.angle + 0.95;
+  const doorPos = new THREE.Vector3(Math.cos(exitAngle) * WALK_R, bottomY + 0.07, Math.sin(exitAngle) * WALK_R);
   const lobbyDoor = createMetalDoor({ target: "entrance", label: "LOBBY" });
 
-  lobbyDoor.position.set(Math.cos(exitAngle) * doorR, bottomY + 0.07, Math.sin(exitAngle) * doorR);
-  lobbyDoor.lookAt(0, bottomY + 0.07, 0);
+  lobbyDoor.position.copy(doorPos);
+  // Дверь смотрит назад, навстречу идущему по лестнице
+  lobbyDoor.lookAt(
+    Math.cos(exitAngle - 0.5) * WALK_R,
+    bottomY + 0.07,
+    Math.sin(exitAngle - 0.5) * WALK_R
+  );
   room.add(lobbyDoor);
 
-  // Свет: мягкий общий и фонари на стойке
-  room.add(new THREE.HemisphereLight(0xcfd8ff, 0x101015, 0.5));
-
-  for (let i = 0; i <= STEP_COUNT; i += 24) {
-    const { angle, y } = stepPose(i);
-    const lamp = new THREE.PointLight(i % 48 ? 0xffd9a8 : 0xc9d6ff, 1.2, 12, 1.6);
-    lamp.position.set(Math.cos(angle) * (INNER_R + 0.25), y + 3.2, Math.sin(angle) * (INNER_R + 0.25));
-    room.add(lamp);
-
-    const bulb =
-      new THREE.Mesh(
-        new THREE.SphereGeometry(0.12, 12, 8),
-        new THREE.MeshBasicMaterial({ color: i % 48 ? 0xffe6c4 : 0xe3eaff })
-      );
-
-    bulb.position.copy(lamp.position);
-    room.add(bulb);
-  }
-
   const doorLight = new THREE.PointLight(0xffffff, 1.4, 10, 1.6);
-  doorLight.position.set(Math.cos(exitAngle) * (doorR - 2), bottomY + 4, Math.sin(exitAngle) * (doorR - 2));
+  doorLight.position.set(Math.cos(exitAngle - 0.35) * WALK_R, bottomY + 4.5, Math.sin(exitAngle - 0.35) * WALK_R);
   room.add(doorLight);
 
   // Настоящее звёздное небо вокруг
@@ -466,7 +470,6 @@ export function createFireStairs() {
 
   room.userData.bottomY = bottomY;
   room.userData.exitAngle = exitAngle;
-  room.userData.doorR = doorR;
 
   stairsRoom = room;
   scene.add(room);
@@ -620,41 +623,52 @@ function setHint(text) {
   hint.classList.toggle("visible", Boolean(text));
 }
 
-// Камера «с дрона»: чуть сзади, снаружи и выше идущего по лестнице,
-// смотрит на ступени впереди — видна сама спираль.
-function ridePose(t) {
-  const e = smooth(t);
-  const s = e * (STEP_COUNT - 1);
+// Идём по лестнице от первого лица: по середине ступеней,
+// взгляд вперёд по ходу и чуть вниз, немного к центру —
+// видно ступени перед собой и как лестница уходит вниз по кругу.
+const SLOPE = STEP_RISE / (STEP_ANGLE * WALK_R);
+
+function walkerPosition(s) {
   const a = s * STEP_ANGLE;
   const y = -s * STEP_RISE;
 
-  const camA = a - 0.45;
-  const pos = new THREE.Vector3(Math.cos(camA) * 8.2, y + 5.2, Math.sin(camA) * 8.2);
+  // Едва заметный шаг, без раскачивания
+  const bob = Math.abs(Math.sin(s * Math.PI)) * 0.03;
 
-  const lookA = a + 0.35;
-  const look = new THREE.Vector3(Math.cos(lookA) * 1.6, y - 0.6, Math.sin(lookA) * 1.6);
-
-  return { pos, look, step: Math.floor(s) };
+  return new THREE.Vector3(Math.cos(a) * WALK_R, y + EYE + bob, Math.sin(a) * WALK_R);
 }
 
-// Внизу: стоим на площадке лицом к двери LOBBY
+function walkerLook(s, pos) {
+  const a = s * STEP_ANGLE;
+
+  const tangent = new THREE.Vector3(-Math.sin(a), 0, Math.cos(a));
+  const inward = new THREE.Vector3(-Math.cos(a), 0, -Math.sin(a));
+
+  const dir = tangent.multiplyScalar(Math.cos(0.28)).add(inward.multiplyScalar(Math.sin(0.28)));
+  const distance = 6;
+
+  return pos.clone()
+    .addScaledVector(dir, distance)
+    .add(new THREE.Vector3(0, -distance * (SLOPE + Math.tan(0.22)), 0));
+}
+
+function ridePose(t) {
+  const s = smooth(t) * (STEP_COUNT - 1);
+  const pos = walkerPosition(s);
+
+  return { pos, look: walkerLook(s, pos), step: Math.floor(s) };
+}
+
+// Внизу: сошли с последней ступени, перед нами дверь LOBBY
 function landedPose() {
   const room = stairsRoom;
   const bottomY = room.userData.bottomY;
-  const a = room.userData.exitAngle;
-  const standR = room.userData.doorR - 5.2;
+  const a = room.userData.exitAngle - 0.62;
 
-  const pos = new THREE.Vector3(
-    Math.cos(a - 0.15) * standR,
-    bottomY + 2.9,
-    Math.sin(a - 0.15) * standR
-  );
+  const pos = new THREE.Vector3(Math.cos(a) * WALK_R, bottomY + EYE, Math.sin(a) * WALK_R);
 
-  const look = new THREE.Vector3(
-    Math.cos(a) * room.userData.doorR,
-    bottomY + 3.6,
-    Math.sin(a) * room.userData.doorR
-  );
+  const doorA = room.userData.exitAngle;
+  const look = new THREE.Vector3(Math.cos(doorA) * WALK_R, bottomY + 3.3, Math.sin(doorA) * WALK_R);
 
   return { pos, look };
 }
@@ -670,6 +684,7 @@ function applyCamera(pos, look) {
 
   camera.position.copy(pos);
   camera.lookAt(pos.clone().add(dir));
+  camera.updateMatrixWorld();
 }
 
 function tick(now) {
@@ -725,6 +740,10 @@ function land() {
   elapsed = RIDE_SECONDS;
   lookYaw = 0;
   lookPitch = 0;
+
+  // Сразу ставим камеру перед дверью, не дожидаясь следующего кадра
+  const end = landedPose();
+  applyCamera(end.pos, end.look);
 
   skipButton?.classList.remove("visible");
 

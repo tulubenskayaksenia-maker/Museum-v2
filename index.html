@@ -19,10 +19,10 @@
 
   <!-- Если телефон показывает старую сохранённую страницу,
        сверяемся с сервером и перезагружаемся на свежую версию.
-       384ad6f заменяется при публикации (tools/deploy.py). -->
+       20928d0 заменяется при публикации (tools/deploy.py). -->
   <script>
     (function () {
-      var BUILD = "384ad6f";
+      var BUILD = "20928d0";
       if (BUILD.indexOf("__") === 0) return;
       fetch("./version.json?t=" + Date.now(), { cache: "no-store" })
         .then(function (r) { return r.json(); })
@@ -54,12 +54,12 @@
 
   <link
     rel="stylesheet"
-    href="./style.css?v=384ad6f"
+    href="./style.css?v=20928d0"
   />
 
   <link
     rel="stylesheet"
-    href="./ui/cinemaViewer.css?v=384ad6f"
+    href="./ui/cinemaViewer.css?v=20928d0"
   />
 </head>
 
@@ -784,7 +784,7 @@
 
   <script
     type="module"
-    src="./main.js?v=384ad6f"
+    src="./main.js?v=20928d0"
   ></script>
 
 </body>

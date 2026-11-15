@@ -10,7 +10,7 @@
 // Плюс Млечный Путь вдоль галактической плоскости
 // и много слабых фоновых звёзд.
 
-import { THREE } from "../core/scene.js?v=384ad6f";
+import { THREE } from "../core/scene.js?v=20928d0";
 
 const BLUE = 0xcfdcff;
 const WHITE = 0xffffff;

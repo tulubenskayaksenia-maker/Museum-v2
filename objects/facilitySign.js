@@ -1,15 +1,15 @@
 import {
   THREE
-} from "../core/scene.js?v=384ad6f";
+} from "../core/scene.js?v=20928d0";
 
 import {
   createSignTexture,
   createSignFaceMaterial
-} from "./signText.js?v=384ad6f";
+} from "./signText.js?v=20928d0";
 
 import {
   ARCHES
-} from "../config/layout.js?v=384ad6f";
+} from "../config/layout.js?v=20928d0";
 
 // =====================================================
 // MATERIALS
