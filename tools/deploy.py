@@ -44,6 +44,7 @@ def stamp_js(text, version):
 
 
 def stamp_html(text, version):
+    text = text.replace("__BUILD__", version)
     text = re.sub(
         r'''(src=["']\./main\.js)(["'])''',
         lambda m: f"{m.group(1)}?v={version}{m.group(2)}",
@@ -92,6 +93,10 @@ def main():
                     with open(path, "w", encoding="utf-8") as f:
                         f.write(new)
                     changed += 1
+
+        # Файл с номером версии: страница сверяется с ним при открытии
+        with open(os.path.join(build, "version.json"), "w", encoding="utf-8") as f:
+            f.write('{"build": "%s"}\n' % version)
 
         # Коммит в gh-pages через отдельный индекс, рабочая папка не трогается
         git("fetch", "-q", "origin", "gh-pages")

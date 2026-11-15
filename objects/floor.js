@@ -1,5 +1,5 @@
-import { THREE } from "../core/scene.js?v=e34eec8";
-import { floorMaterial } from "../core/materials.js?v=e34eec8";
+import { THREE } from "../core/scene.js?v=b43ba13";
+import { floorMaterial } from "../core/materials.js?v=b43ba13";
 
 export function createFloor(parent) {
   const floor = new THREE.Mesh(

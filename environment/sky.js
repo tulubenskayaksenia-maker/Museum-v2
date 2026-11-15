@@ -1,4 +1,4 @@
-import { THREE, scene } from "../core/scene.js?v=e34eec8";
+import { THREE, scene } from "../core/scene.js?v=b43ba13";
 
 export function createSky() {
   const group = new THREE.Group();
