@@ -9,6 +9,10 @@ import {
   darkMaterial
 } from "../core/materials.js";
 
+import {
+  createRestroomDecor
+} from "../objects/restroomDecor.js";
+
 // =====================================================
 // MATERIALS
 // =====================================================
@@ -148,15 +152,19 @@ export function createRestroom({
   });
 
   // Зеркало в полный рост в женском туалете.
+  // (сдвинуто к выходу: центр этой стены — фон для селфи)
   if (roomType === "women") {
     createFullLengthMirror({
       parent: room,
       x: -8.53,
       y: 3.05,
-      z: -2.5,
+      z: 5.4,
       rotationY: Math.PI / 2
     });
   }
+
+  // Плитка, светящийся логотип, бра и картины — фон для селфи
+  createRestroomDecor(room);
 
   // Кабинки в глубине.
   createCabin({
@@ -1034,6 +1042,10 @@ function createPanoramicMirror({
     0.105
   );
 
+  // Двойной тап по зеркалу — селфи (ui/selfieMirror.js)
+  glass.userData.type = "selfieMirror";
+  backing.userData.type = "selfieMirror";
+
   mirrorGroup.add(glass);
 
   createMirrorFrame({
@@ -1126,6 +1138,9 @@ function createFullLengthMirror({
     );
 
   glass.position.z = 0.075;
+
+  glass.userData.type = "selfieMirror";
+  backing.userData.type = "selfieMirror";
 
   mirrorGroup.add(glass);
 

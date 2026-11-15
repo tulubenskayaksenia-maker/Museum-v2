@@ -52,6 +52,12 @@ import {
   isFireStairsRiding
 } from "../rooms/fireStairs.js";
 
+import {
+  openSelfieMirror,
+  closeSelfieMirror,
+  isSelfieMirrorOpen
+} from "../ui/selfieMirror.js";
+
 
 // =====================================================
 // THREE.JS HELPERS
@@ -742,6 +748,7 @@ function isInterfaceElement(
         "#shop-menu",
         "#info-board-menu",
         "#fire-stairs-skip",
+        "#selfie-mirror",
         "#ticket-menu",
         "#artist-intro",
         "#cinema-viewer",
@@ -786,6 +793,7 @@ const OVERLAY_OPEN_SELECTOR = [
   "#ticket-menu.visible",
   "#shop-menu.visible",
   "#info-board-menu.visible",
+  "#selfie-mirror.visible",
   "#artist-intro:not([hidden])",
   "#cinema-viewer:not([hidden])",
   "#sculpture-viewer.visible"
@@ -1264,6 +1272,7 @@ function isInteractionBlocked() {
     isTicketMenuOpen() ||
     isShopMenuOpen() ||
     isInfoBoardOpen() ||
+    isSelfieMirrorOpen() ||
     isArtworkOpen() ||
     isArtistIntroOpen() ||
     isOnboardingVisible() ||
@@ -2244,6 +2253,22 @@ function performPrimaryAction() {
     return true;
   }
 
+  // Зеркало в туалете: двойной тап — селфи
+  if (
+    interactiveObject?.userData.type ===
+    "selfieMirror"
+  ) {
+    if (!confirmDoorClick(interactiveObject)) {
+      return true;
+    }
+
+    clearInputState();
+
+    openSelfieMirror();
+
+    return true;
+  }
+
   // Схема музея / афиша в лобби
   if (
     interactiveObject?.userData.type ===
@@ -2505,7 +2530,8 @@ function getInteractiveObject() {
         type === "artwork" ||
         type === "cabinDoor" ||
         type === "shopCounter" ||
-        type === "infoBoard"
+        type === "infoBoard" ||
+        type === "selfieMirror"
       ) {
         return object;
       }
@@ -3395,6 +3421,12 @@ function handleBackAction() {
     return;
   }
 
+  if (isSelfieMirrorOpen()) {
+    closeSelfieMirror();
+
+    return;
+  }
+
   if (isTicketMenuOpen()) {
     closeTicketMenu();
 
@@ -3537,6 +3569,7 @@ function updateCursor() {
     isTicketMenuOpen() ||
     isShopMenuOpen() ||
     isInfoBoardOpen() ||
+    isSelfieMirrorOpen() ||
     isArtistIntroOpen() ||
     isOnboardingVisible() ||
     isInstructionsVisible()
@@ -3626,7 +3659,8 @@ function updateCursor() {
     type === "door" ||
     type === "cabinDoor" ||
     type === "shopCounter" ||
-    type === "infoBoard"
+    type === "infoBoard" ||
+    type === "selfieMirror"
   ) {
     document.body.style.cursor =
       "pointer";
