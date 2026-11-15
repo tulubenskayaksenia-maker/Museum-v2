@@ -17,6 +17,26 @@
 
   <title>Incognito Museum</title>
 
+  <!-- Если телефон показывает старую сохранённую страницу,
+       сверяемся с сервером и перезагружаемся на свежую версию.
+       __BUILD__ заменяется при публикации (tools/deploy.py). -->
+  <script>
+    (function () {
+      var BUILD = "__BUILD__";
+      if (BUILD.indexOf("__") === 0) return;
+      fetch("./version.json?t=" + Date.now(), { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (v) {
+          if (!v || !v.build || v.build === BUILD) return;
+          var url = new URL(location.href);
+          if (url.searchParams.get("_v") === v.build) return;
+          url.searchParams.set("_v", v.build);
+          location.replace(url.toString());
+        })
+        .catch(function () {});
+    })();
+  </script>
+
   <link rel="icon" type="image/png" href="./assets/brand/favicon.png" />
   <link rel="apple-touch-icon" href="./assets/brand/apple-touch-icon.png" />
 

@@ -177,12 +177,12 @@ function drawMap() {
   sub("WARDROBE", lobbyX + 145, lobbyY + 170);
   sub("WC", lobbyX + 145, lobbyY + 205);
 
-  // You are here — у входа, между стендами
+  // You are here
   ctx.fillStyle = INK;
   ctx.beginPath();
-  ctx.arc(cx, lobbyY + 270, 16, 0, Math.PI * 2);
+  ctx.arc(lobbyX + lobbyW - 330, lobbyY + 240, 16, 0, Math.PI * 2);
   ctx.fill();
-  spaced(ctx, "YOU ARE HERE", cx + 34, lobbyY + 270, 22, INK, 400, 0.2, "left");
+  spaced(ctx, "YOU ARE HERE", lobbyX + lobbyW - 360, lobbyY + 240, 22, INK, 400, 0.2, "right");
 
   // Entrance
   sub("ENTRANCE", cx, lobbyY + lobbyH + 50);
@@ -275,56 +275,6 @@ function createBoard(canvas, kind, width) {
   return group;
 }
 
-const legMaterial =
-  new THREE.MeshStandardMaterial({
-    color: 0x2a2c31,
-    roughness: 0.4,
-    metalness: 0.7
-  });
-
-// Стенд: доска на двух тонких стойках с основанием
-function createStand(canvas, kind) {
-  const width = 2.5;
-  const board = createBoard(canvas, kind, width);
-  const height = width * canvas.height / canvas.width;
-  const bottom = 1.35;
-
-  const stand = new THREE.Group();
-  stand.name = `Lobby ${kind} stand`;
-
-  board.position.y = bottom + height / 2;
-  stand.add(board);
-
-  for (const x of [-width * 0.36, width * 0.36]) {
-    const leg =
-      new THREE.Mesh(
-        new THREE.BoxGeometry(0.07, bottom + 0.1, 0.07),
-        legMaterial
-      );
-
-    leg.position.set(x, (bottom + 0.1) / 2, -0.08);
-    stand.add(leg);
-
-    const foot =
-      new THREE.Mesh(
-        new THREE.BoxGeometry(0.5, 0.05, 0.7),
-        legMaterial
-      );
-
-    foot.position.set(x, 0.025, -0.08);
-    stand.add(foot);
-  }
-
-  stand.traverse((child) => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    }
-  });
-
-  return stand;
-}
-
 export function createLobbyBoards(parent) {
   const mapCanvas = drawMap();
   const exhibitionsCanvas = drawExhibitions();
@@ -332,19 +282,16 @@ export function createLobbyBoards(parent) {
   boardImages.map = mapCanvas;
   boardImages.exhibitions = exhibitionsCanvas;
 
-  /*
-    Отдельно стоящие стенды лицом ко входу.
-    На телефоне в вертикальном кадре видно только ~25° в стороны,
-    поэтому стенды стоят ближе к центру и смотрят на посетителя.
-  */
-  const map = createStand(mapCanvas, "map");
-  map.position.set(3.1, 0, 6.5);
-  map.rotation.y = -0.12;
+  // Схема — на правой стене, перед кассами
+  const map = createBoard(mapCanvas, "map", 3.2);
+  map.position.set(11.88, 4.4, 7.2);
+  map.rotation.y = -Math.PI / 2;
   parent.add(map);
 
-  const poster = createStand(exhibitionsCanvas, "exhibitions");
-  poster.position.set(-3.1, 0, 6.5);
-  poster.rotation.y = 0.12;
+  // Афиша — напротив, на левой стене
+  const poster = createBoard(exhibitionsCanvas, "exhibitions", 3.2);
+  poster.position.set(-11.88, 4.4, 7.2);
+  poster.rotation.y = Math.PI / 2;
   parent.add(poster);
 
   return { map, poster };
