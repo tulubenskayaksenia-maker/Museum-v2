@@ -2349,14 +2349,8 @@ function performPrimaryAction() {
 
       goToRoom("fireStairs");
 
-      startFireStairsRide(() => {
-        goToRoom("entrance");
-
-        navigationHistory.length = 0;
-
-        updateMobileBackButton();
-        broadcastNavigationState();
-      });
+      // Спуск заканчивается у двери LOBBY — её посетитель нажимает сам
+      startFireStairsRide();
 
       return true;
     }
