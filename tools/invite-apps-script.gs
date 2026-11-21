@@ -37,6 +37,14 @@ const SIGNATURE = "Ksenia, Incognito Museum";
 
 const SHEET_NAME = "Guests";
 
+// Ссылка-приглашение в Discord для необязательной встречи после открытия.
+// Пока пусто: тогда строки про Discord в напоминании не добавляются.
+const DISCORD_URL = "";
+const DISCORD_LINE =
+  "If you'd like to talk, I'll be on Discord afterwards for a small, optional " +
+  "conversation: feedback, questions, anything about the museum.\n";
+
+
 // Колонки таблицы (номера с 1)
 const COL_REMINDER = 6;   // F: Reminder sent
 const COL_TICKET = 7;     // G: Ticket sent
@@ -339,6 +347,7 @@ function sendPendingReminders_() {
           "Here is the link: " + guestLink_(rows[i][3]) + "\n\n" +
           "Your ticket number is " + rows[i][3] + ". You won't need to show it, " +
           "the door will simply be open.\n\n" +
+          (DISCORD_URL ? DISCORD_LINE + DISCORD_URL + "\n\n" : "") +
           "See you inside,\n" + SIGNATURE
       });
     } catch (err) {
