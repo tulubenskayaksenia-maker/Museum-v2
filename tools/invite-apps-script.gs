@@ -41,8 +41,8 @@ const SHEET_NAME = "Guests";
 // Пока пусто: тогда строки про Discord в напоминании не добавляются.
 const DISCORD_URL = "";
 const DISCORD_LINE =
-  "If you'd like to talk, I'll be on Discord afterwards for a small, optional " +
-  "conversation: feedback, questions, anything about the museum.\n";
+  "I'll also be on Discord from 19:00, right as the museum opens, for a small, " +
+  "optional conversation: feedback, questions, anything about the museum.\n";
 
 
 // Колонки таблицы (номера с 1)
