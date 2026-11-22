@@ -1,27 +1,25 @@
 /**
- * Incognito Museum: приглашения на открытие (Google Apps Script)
+ * Incognito Museum: invitations to the opening (Google Apps Script)
  *
- * Что делает:
- *  - принимает email с сайта (форма «Get an invitation»);
- *  - записывает гостя в Google-таблицу (лист «Guests»);
- *  - сразу отправляет ему письмо с билетом и файлом для календаря;
- *  - в день открытия рассылает всем напоминание (sendOpeningReminder).
+ * What it does:
+ *  - receives an email address from the site form ("Get an invitation");
+ *  - writes the guest to the Google Sheet (sheet "Guests");
+ *  - immediately sends a ticket email with a calendar file;
+ *  - on opening day sends everyone a reminder (sendOpeningReminder).
  *
- * Письма уходят с твоего Gmail. Лимит Google: около 100 писем в день
- * для обычного аккаунта. Если лимит кончился, гость встаёт в очередь
- * (пустая колонка «Ticket sent»), и processQueue раз в час досылает
- * билеты, как только Google снова разрешает отправку.
+ * Emails go out from your Gmail. Google limit: about 100 emails a day
+ * for a regular account. If the limit runs out, the guest waits in a queue
+ * (empty "Ticket sent" column) and processQueue sends the remaining
+ * tickets every hour once Google allows sending again.
  *
- * После вставки кода запусти ОДИН раз функцию setupTriggers.
- *
- * Как установить: см. инструкцию в чате или README рядом.
+ * Run setupTriggers ONCE only if the triggers do not exist yet.
  */
 
-// ---------- НАСТРОЙКИ ----------
+// ---------- SETTINGS ----------
 
 const SITE_URL = "https://incogmusem.com";
 
-// Ссылка из письма: сайт узнаёт гостя и показывает «вы в списке гостей»
+// Link from the email: the site recognises the guest and shows "you're on the guest list"
 function guestLink_(ticket) {
   return SITE_URL + "/?ticket=" + encodeURIComponent(ticket || "");
 }
@@ -37,28 +35,28 @@ const SIGNATURE = "Ksenia, Incognito Museum";
 
 const SHEET_NAME = "Guests";
 
-// Ссылка-приглашение в Discord для необязательной встречи после открытия.
-// Пока пусто: тогда строки про Discord в напоминании не добавляются.
+// Discord invite for the optional conversation during the opening.
+// If empty, the reminder is sent without the Discord lines.
 const DISCORD_URL = "https://discord.gg/AKAwH93xq";
 const DISCORD_LINE =
   "I'll also be on Discord from 19:00, right as the museum opens, for a small, " +
   "optional conversation: feedback, questions, anything about the museum.\n";
 
 
-// Колонки таблицы (номера с 1)
+// Sheet columns (numbered from 1)
 const COL_REMINDER = 6;   // F: Reminder sent
 const COL_TICKET = 7;     // G: Ticket sent
 
-// Напоминание: 23.11 с 17:00 до конца дня
+// Reminder: 23.11 from 17:00 until the end of the day
 const REMINDER_START = new Date("2026-11-23T17:00:00+02:00");
 const REMINDER_STOP = new Date("2026-11-24T00:00:00+02:00");
 
-// ---------- ПРИЁМ ЗАЯВОК С САЙТА ----------
+// ---------- SIGN-UPS FROM THE SITE ----------
 
 function doPost(e) {
   const p = (e && e.parameter) || {};
 
-  // Заявка художника с афиши (open call)
+  // Artist application from the open-call board
   if (p.kind === "application") {
     return handleApplication_(p);
   }
@@ -78,11 +76,11 @@ function doPost(e) {
     const sheet = getSheet_();
     const rows = sheet.getDataRange().getValues();
 
-    // Уже есть в списке: новый билет не создаём
+    // Already on the list: do not create a new ticket
     for (let i = 1; i < rows.length; i++) {
       if (String(rows[i][2]).toLowerCase() === email) {
         if (!rows[i][COL_TICKET - 1]) {
-          return reply_("queued"); // билет ещё в очереди, пришлём сами
+          return reply_("queued"); // ticket still queued, it will be sent automatically
         }
         if (MailApp.getRemainingDailyQuota() > 0) {
           trySendTicket_(sheet, i + 1, email, rows[i][1] || name, rows[i][3], true);
@@ -105,7 +103,7 @@ function doGet() {
   return reply_("Incognito Museum invitations are running.");
 }
 
-// Отправляет билет, если есть лимит. Иначе оставляет в очереди.
+// Sends the ticket if quota allows. Otherwise leaves it in the queue.
 function trySendTicket_(sheet, rowNumber, email, name, ticket, isResend) {
   if (MailApp.getRemainingDailyQuota() < 1) {
     return false;
@@ -125,7 +123,7 @@ function trySendTicket_(sheet, rowNumber, email, name, ticket, isResend) {
   return true;
 }
 
-// ---------- ОЧЕРЕДЬ (запускается каждый час) ----------
+// ---------- QUEUE (runs every hour) ----------
 
 function processQueue() {
   const lock = LockService.getScriptLock();
@@ -137,12 +135,12 @@ function processQueue() {
     const now = new Date();
     const reminderTime = now >= REMINDER_START && now < REMINDER_STOP;
 
-    // В день открытия сначала напоминания, потом билеты
+    // On opening day: reminders first, then tickets
     if (reminderTime) {
       sendPendingReminders_();
     }
 
-    // Билеты после начала открытия уже не нужны: музей открыт
+    // No tickets needed after the opening starts: the museum is open
     if (now < OPENING_START) {
       sendPendingTickets_();
     }
@@ -162,22 +160,22 @@ function sendPendingTickets_() {
 
     if (!trySendTicket_(sheet, i + 1, rows[i][2], rows[i][1], rows[i][3], false)) {
       if (MailApp.getRemainingDailyQuota() < 1) {
-        break; // лимит кончился, продолжим в следующий час
+        break; // quota used up, continue next hour
       }
     }
   }
 }
 
-/** Сколько гостей ждут билет и сколько писем ещё можно отправить сегодня. */
+/** How many guests are waiting for a ticket and how many emails can still be sent today. */
 function checkQueue() {
   const rows = getSheet_().getDataRange().getValues().slice(1);
   const waiting = rows.filter((r) => r[2] && !r[COL_TICKET - 1]).length;
-  Logger.log("Гостей всего: " + rows.length);
-  Logger.log("Ждут билет: " + waiting);
-  Logger.log("Писем можно отправить сегодня: " + MailApp.getRemainingDailyQuota());
+  Logger.log("Guests total: " + rows.length);
+  Logger.log("Waiting for a ticket: " + waiting);
+  Logger.log("Emails left today: " + MailApp.getRemainingDailyQuota());
 }
 
-// ---------- ПИСЬМО С БИЛЕТОМ ----------
+// ---------- TICKET EMAIL ----------
 
 function sendTicket_(email, name, ticket) {
   const hello = name ? "Hi " + escape_(name) + "," : "Hi,";
@@ -195,11 +193,11 @@ function sendTicket_(email, name, ticket) {
           'thank you for signing up. Here is your ticket to the opening of Incognito Museum.' +
         '</p>' +
 
-        // Билет
+        // Ticket
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" ' +
           'style="border:1px solid #3a3c42;background:#1b1d22;">' +
           '<tr><td style="padding:26px 26px 18px;">' +
-            '<div style="font-size:10px;letter-spacing:3px;color:#8d8f95;">ADMIT ONE · OPENING NIGHT</div>' +
+            '<div style="font-size:10px;letter-spacing:3px;color:#8d8f95;">ADMIT ONE &middot; OPENING NIGHT</div>' +
             '<div style="font-family:Georgia,serif;font-size:34px;line-height:1.1;color:#f3f1eb;margin:12px 0 4px;">' +
               'Incognito Museum</div>' +
           '</td></tr>' +
@@ -286,11 +284,11 @@ function calendarFile_(ticket) {
   return Utilities.newBlob(ics, "text/calendar", "incognito-museum-opening.ics");
 }
 
-// ---------- НАПОМИНАНИЕ В ДЕНЬ ОТКРЫТИЯ ----------
+// ---------- OPENING-DAY REMINDER ----------
 
 /**
- * Запусти ОДИН раз вручную после вставки кода.
- * Ставит: очередь билетов каждый час + напоминание 23.11 в 17:00.
+ * Run ONCE by hand, only if the triggers do not exist yet.
+ * Sets up: ticket queue every hour + reminder on 23.11 at 17:00.
  */
 function setupTriggers() {
   ScriptApp.getProjectTriggers().forEach((t) => ScriptApp.deleteTrigger(t));
@@ -305,11 +303,11 @@ function setupTriggers() {
     .at(REMINDER_START)
     .create();
 
-  getSheet_(); // заодно добавит колонку «Ticket sent», если её нет
-  Logger.log("Готово: очередь раз в час и напоминание 23.11 в 17:00.");
+  getSheet_(); // also adds the "Ticket sent" column if missing
+  Logger.log("Done: hourly queue and reminder on 23.11 at 17:00.");
 }
 
-// Старое имя оставлено, чтобы ничего не сломалось
+// Old name kept so nothing breaks
 function scheduleReminder() {
   setupTriggers();
 }
@@ -331,7 +329,7 @@ function sendPendingReminders_() {
     }
 
     if (MailApp.getRemainingDailyQuota() < 1) {
-      break; // остальным — в следующий час
+      break; // the rest next hour
     }
 
     const hello = name ? "Hi " + name + "," : "Hi,";
@@ -359,7 +357,7 @@ function sendPendingReminders_() {
   }
 }
 
-// ---------- ЗАЯВКИ ХУДОЖНИКОВ (OPEN CALL) ----------
+// ---------- ARTIST APPLICATIONS (OPEN CALL) ----------
 
 const APPLICATIONS_SHEET = "Applications";
 
@@ -391,7 +389,7 @@ function handleApplication_(p) {
     lock.releaseLock();
   }
 
-  // Письмо тебе: новая заявка
+  // Email to you: new application
   if (MailApp.getRemainingDailyQuota() > 1) {
     try {
       MailApp.sendEmail({
@@ -407,7 +405,7 @@ function handleApplication_(p) {
           "Reply to this email to answer the artist."
       });
 
-      // Подтверждение художнику
+      // Confirmation to the artist
       MailApp.sendEmail({
         to: email,
         name: SENDER_NAME,
@@ -426,10 +424,10 @@ function handleApplication_(p) {
   return reply_("ok");
 }
 
-// ---------- СЛУЖЕБНОЕ ----------
+// ---------- HELPERS ----------
 
 function checkQuota() {
-  Logger.log("Писем можно отправить сегодня: " + MailApp.getRemainingDailyQuota());
+  Logger.log("Emails left today: " + MailApp.getRemainingDailyQuota());
 }
 
 function getSheet_() {
@@ -453,8 +451,8 @@ function getSheet_() {
     sheet.setFrozenRows(1);
   }
 
-  // Таблица из первой версии: добавляем колонку «Ticket sent».
-  // Всем, кто записался до этого, билет уже был отправлен сразу.
+  // Sheet from the first version: add the "Ticket sent" column.
+  // Everyone who signed up before that already got their ticket.
   if (sheet.getRange(1, COL_TICKET).getValue() !== "Ticket sent") {
     sheet.getRange(1, COL_TICKET).setValue("Ticket sent");
     const last = sheet.getLastRow();
@@ -466,12 +464,12 @@ function getSheet_() {
   return sheet;
 }
 
-/** Запусти один раз, чтобы выдать разрешения и проверить письмо на себе. */
+/** Run once to grant permissions and test the email on yourself. */
 function testSendToMe() {
   const me = Session.getActiveUser().getEmail();
   getSheet_();
   sendTicket_(me, "Ksenia", "IM-TEST");
-  Logger.log("Тестовый билет отправлен на " + me);
+  Logger.log("Test ticket sent to " + me);
 }
 
 function escape_(s) {
