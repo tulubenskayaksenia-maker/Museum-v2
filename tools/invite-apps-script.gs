@@ -39,7 +39,7 @@ const SHEET_NAME = "Guests";
 
 // Ссылка-приглашение в Discord для необязательной встречи после открытия.
 // Пока пусто: тогда строки про Discord в напоминании не добавляются.
-const DISCORD_URL = "";
+const DISCORD_URL = "https://discord.gg/AKAwH93xq";
 const DISCORD_LINE =
   "I'll also be on Discord from 19:00, right as the museum opens, for a small, " +
   "optional conversation: feedback, questions, anything about the museum.\n";
