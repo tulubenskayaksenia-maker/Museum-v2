@@ -2259,8 +2259,12 @@ function performPrimaryAction() {
     "selfieMirror"
   ) {
     if (!confirmDoorClick(interactiveObject)) {
+      armMirrorHint();
+
       return true;
     }
+
+    hideMirrorHint();
 
     clearInputState();
 
@@ -2494,7 +2498,7 @@ function startClickStep(
 // INTERACTIVE OBJECT SEARCH
 // =====================================================
 
-function getInteractiveObject() {
+function getInteractiveObject(screenPoint = pointer) {
   const activeRoom =
     rooms[currentRoom];
 
@@ -2503,7 +2507,7 @@ function getInteractiveObject() {
   }
 
   raycaster.setFromCamera(
-    pointer,
+    screenPoint,
     camera
   );
 
@@ -3579,6 +3583,7 @@ function updateCursor() {
 
     hideTicketHoverHint();
     hideDoorHint();
+    hideMirrorHint();
     setCrosshairActive(false);
 
     return;
@@ -3590,6 +3595,7 @@ function updateCursor() {
 
     hideTicketHoverHint();
     hideDoorHint();
+    hideMirrorHint();
     setCrosshairActive(false);
 
     return;
@@ -3634,6 +3640,19 @@ function updateCursor() {
 
   hideTicketHoverHint();
 
+  // Зеркало в туалете: подсказка «нажми на меня»
+  if (type === "selfieMirror") {
+    document.body.style.cursor =
+      "pointer";
+
+    hideDoorHint();
+    showMirrorHint(true);
+
+    return;
+  }
+
+  hideMirrorHint();
+
   if (
     type === "door" &&
     object.userData.target
@@ -3673,6 +3692,298 @@ function updateCursor() {
     rightMouseDown
       ? "grabbing"
       : "crosshair";
+}
+
+
+// =====================================================
+// SELFIE MIRROR HINT
+// =====================================================
+
+/*
+  Подсказка у зеркала в туалетах.
+  Компьютер: появляется у курсора, пока он наведён на зеркало.
+  Телефон: наведения нет, поэтому показываем её внизу по центру,
+  когда зеркало оказывается посередине экрана.
+  После первого клика/тапа просит нажать ещё раз (селфи по двойному).
+*/
+
+const MIRROR_HINT_TEXT =
+  isTouchDevice
+    ? "DOUBLE TAP ME · TAKE A SELFIE"
+    : "DOUBLE CLICK ME · TAKE A SELFIE";
+
+const MIRROR_HINT_ARMED_TEXT =
+  isTouchDevice
+    ? "TAP AGAIN · TAKE A SELFIE"
+    : "CLICK AGAIN · TAKE A SELFIE";
+
+const MIRROR_ROOMS = [
+  "womenWC",
+  "menWC"
+];
+
+const mirrorScreenCenter =
+  new THREE.Vector2(0, 0);
+
+let lastMirrorHintCheck = 0;
+let mirrorHintArmTimeout = 0;
+
+function getMirrorHint() {
+  let hint =
+    document.getElementById(
+      "mirror-hover-hint"
+    );
+
+  if (hint) {
+    return hint;
+  }
+
+  const style =
+    document.createElement(
+      "style"
+    );
+
+  style.textContent = `
+    #mirror-hover-hint {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 9000;
+
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      padding: 10px 16px;
+
+      border: 1px solid rgba(255, 224, 189, 0.75);
+      background: rgba(12, 9, 6, 0.8);
+      color: #fff4e6;
+
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      white-space: nowrap;
+
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+
+      transform: translate(18px, -50%);
+
+      transition:
+        opacity 0.18s ease,
+        visibility 0.18s ease,
+        background 0.15s ease;
+
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+
+      animation: mirrorHintGlow 1.3s ease-in-out infinite alternate;
+    }
+
+    #mirror-hover-hint.visible {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #mirror-hover-hint.flip {
+      transform: translate(calc(-100% - 18px), -50%);
+    }
+
+    #mirror-hover-hint.centered {
+      left: 50%;
+      top: 64%;
+      transform: translate(-50%, -50%);
+      font-size: 12px;
+    }
+
+    #mirror-hover-hint.armed {
+      background: rgba(255, 224, 189, 0.22);
+      border-color: #ffe0bd;
+    }
+
+    .mirror-hint-light {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ffe0bd;
+      box-shadow: 0 0 10px 2px rgba(255, 224, 189, 0.9);
+    }
+
+    @keyframes mirrorHintGlow {
+      from { box-shadow: 0 0 8px rgba(255, 214, 170, 0.2); }
+      to { box-shadow: 0 0 26px rgba(255, 214, 170, 0.6); }
+    }
+  `;
+
+  document.head.appendChild(
+    style
+  );
+
+  hint =
+    document.createElement(
+      "div"
+    );
+
+  hint.id =
+    "mirror-hover-hint";
+
+  hint.innerHTML = `
+    <span class="mirror-hint-light"></span>
+    <span class="mirror-hint-text">${MIRROR_HINT_TEXT}</span>
+  `;
+
+  document.body.appendChild(
+    hint
+  );
+
+  return hint;
+}
+
+function showMirrorHint(atCursor) {
+  const hint =
+    getMirrorHint();
+
+  if (atCursor) {
+    hint.classList.remove(
+      "centered"
+    );
+
+    hint.style.left =
+      `${(pointer.x + 1) * 0.5 *
+        window.innerWidth}px`;
+
+    hint.style.top =
+      `${(1 - pointer.y) * 0.5 *
+        window.innerHeight}px`;
+
+    // У правого края экрана подсказка встаёт слева от курсора
+    const cursorX =
+      (pointer.x + 1) * 0.5 *
+      window.innerWidth;
+
+    hint.classList.toggle(
+      "flip",
+      cursorX + 18 + hint.offsetWidth >
+        window.innerWidth - 12
+    );
+  } else {
+    hint.classList.remove(
+      "flip"
+    );
+
+    hint.classList.add(
+      "centered"
+    );
+
+    hint.style.left = "";
+    hint.style.top = "";
+  }
+
+  hint.classList.add(
+    "visible"
+  );
+}
+
+function hideMirrorHint() {
+  const hint =
+    document.getElementById(
+      "mirror-hover-hint"
+    );
+
+  if (!hint) {
+    return;
+  }
+
+  window.clearTimeout(
+    mirrorHintArmTimeout
+  );
+
+  hint.classList.remove(
+    "visible",
+    "armed"
+  );
+
+  hint.querySelector(
+    ".mirror-hint-text"
+  ).textContent =
+    MIRROR_HINT_TEXT;
+}
+
+// Первый клик/тап по зеркалу: «нажми ещё раз»
+function armMirrorHint() {
+  const hint =
+    getMirrorHint();
+
+  hint.querySelector(
+    ".mirror-hint-text"
+  ).textContent =
+    MIRROR_HINT_ARMED_TEXT;
+
+  hint.classList.add(
+    "armed"
+  );
+
+  if (!hint.classList.contains("visible")) {
+    showMirrorHint(!isTouchDevice);
+  }
+
+  window.clearTimeout(
+    mirrorHintArmTimeout
+  );
+
+  mirrorHintArmTimeout =
+    window.setTimeout(
+      () => {
+        hint.classList.remove(
+          "armed"
+        );
+
+        hint.querySelector(
+          ".mirror-hint-text"
+        ).textContent =
+          MIRROR_HINT_TEXT;
+      },
+      DOOR_CONFIRM_WINDOW
+    );
+}
+
+// Телефон: зеркало посередине экрана → подсказка внизу по центру
+function updateTouchMirrorHint(now) {
+  if (
+    !isTouchDevice ||
+    now - lastMirrorHintCheck < 200
+  ) {
+    return;
+  }
+
+  lastMirrorHintCheck = now;
+
+  if (
+    !MIRROR_ROOMS.includes(currentRoom) ||
+    isAnyOverlayOpen()
+  ) {
+    hideMirrorHint();
+
+    return;
+  }
+
+  const object =
+    getInteractiveObject(
+      mirrorScreenCenter
+    );
+
+  if (object?.userData.type === "selfieMirror") {
+    const hint =
+      getMirrorHint();
+
+    if (!hint.classList.contains("armed")) {
+      showMirrorHint(false);
+    }
+  } else {
+    hideMirrorHint();
+  }
 }
 
 
@@ -4268,6 +4579,10 @@ export function updateMovement() {
   }
 
   updateInterfaceHints(
+    currentTime
+  );
+
+  updateTouchMirrorHint(
     currentTime
   );
 
