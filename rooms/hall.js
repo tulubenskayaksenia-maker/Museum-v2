@@ -1,31 +1,31 @@
 import {
   THREE,
   scene
-} from "../core/scene.js?v=5d12b72";
+} from "../core/scene.js?v=89a4dbd";
 
 import {
   createFloor
-} from "../objects/floor.js?v=5d12b72";
+} from "../objects/floor.js?v=89a4dbd";
 
 import {
   createWalls
-} from "../objects/wall.js?v=5d12b72";
+} from "../objects/wall.js?v=89a4dbd";
 
 import {
   createStairs
-} from "../objects/stairs.js?v=5d12b72";
+} from "../objects/stairs.js?v=89a4dbd";
 
 import {
   createSideArches
-} from "../objects/arch.js?v=5d12b72";
+} from "../objects/arch.js?v=89a4dbd";
 
 import {
   createMainPortal
-} from "../objects/door.js?v=5d12b72";
+} from "../objects/door.js?v=89a4dbd";
 
 import {
   createTicketBooth
-} from "../objects/ticketBooth.js?v=5d12b72";
+} from "../objects/ticketBooth.js?v=89a4dbd";
 
 export function createEntrance() {
   const entrance = new THREE.Group();

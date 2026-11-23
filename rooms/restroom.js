@@ -1,17 +1,17 @@
 import {
   THREE,
   scene
-} from "../core/scene.js?v=5d12b72";
+} from "../core/scene.js?v=89a4dbd";
 
 import {
   floorMaterial,
   wallMaterial,
   darkMaterial
-} from "../core/materials.js?v=5d12b72";
+} from "../core/materials.js?v=89a4dbd";
 
 import {
   createRestroomDecor
-} from "../objects/restroomDecor.js?v=5d12b72";
+} from "../objects/restroomDecor.js?v=89a4dbd";
 
 // =====================================================
 // MATERIALS

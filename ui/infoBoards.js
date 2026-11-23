@@ -3,12 +3,14 @@
 // ui/infoBoards.js
 // =====================================================
 
-import { boardImages } from "../objects/lobbyBoards.js?v=5d12b72";
+import { boardImages } from "../objects/lobbyBoards.js?v=89a4dbd";
+
+import { updateReviewsBoard } from "../objects/reviewsBoard.js?v=89a4dbd";
 
 import {
   INVITE_ENDPOINT,
   CONTACT_EMAIL
-} from "../config/opening.js?v=5d12b72";
+} from "../config/opening.js?v=89a4dbd";
 
 let root = null;
 let open = false;
@@ -49,6 +51,8 @@ export function setupInfoBoards() {
   }
 
   setupOpenCallForm();
+  setupReviewForm();
+  loadReviews();
 }
 
 export function openInfoBoard(kind) {
@@ -58,6 +62,10 @@ export function openInfoBoard(kind) {
 
   for (const panel of root.querySelectorAll(".info-board-panel")) {
     panel.hidden = panel.dataset.board !== kind;
+  }
+
+  if (kind === "reviews") {
+    loadReviews();
   }
 
   if (kind === "map") {
@@ -160,6 +168,130 @@ function setupOpenCallForm() {
     } catch {
       submit.disabled = false;
       submit.textContent = "SEND APPLICATION";
+      status.dataset.state = "error";
+      status.textContent = "Something went wrong. Check your connection and try again.";
+    }
+  });
+}
+
+// -----------------------------------------------------
+// GUEST BOOK (shop): approved notes + form
+// -----------------------------------------------------
+
+let reviewsLoadedAt = 0;
+let reviewsLoading = false;
+
+async function loadReviews() {
+  if (!INVITE_ENDPOINT || reviewsLoading) {
+    return;
+  }
+
+  // не чаще раза в минуту
+  if (Date.now() - reviewsLoadedAt < 60000) {
+    return;
+  }
+
+  reviewsLoading = true;
+
+  try {
+    const response =
+      await fetch(`${INVITE_ENDPOINT}?kind=reviews`, { cache: "no-store" });
+
+    const data = await response.json();
+    const reviews = Array.isArray(data?.reviews) ? data.reviews : [];
+
+    reviewsLoadedAt = Date.now();
+    updateReviewsBoard(reviews);
+    renderReviewList(reviews);
+  } catch {
+    // Скрипт ещё старой версии или нет сети: доска остаётся «Be the first…»
+  } finally {
+    reviewsLoading = false;
+  }
+}
+
+function renderReviewList(reviews) {
+  const list = root?.querySelector(".review-list");
+
+  if (!list) {
+    return;
+  }
+
+  list.replaceChildren();
+
+  for (const review of reviews) {
+    const item = document.createElement("div");
+    item.className = "review-item";
+
+    const text = document.createElement("p");
+    text.className = "review-text";
+    text.textContent = `“${String(review.text || "")}”`;
+
+    const name = document.createElement("div");
+    name.className = "review-name";
+    name.textContent = String(review.name || "A visitor");
+
+    item.append(text, name);
+    list.append(item);
+  }
+}
+
+function setupReviewForm() {
+  const form = root.querySelector(".review-form");
+  const status = root.querySelector(".review-status");
+
+  if (!form) {
+    return;
+  }
+
+  const submit = form.querySelector("button[type=submit]");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const data = new FormData(form);
+
+    if (data.get("website")) {
+      return; // бот
+    }
+
+    const name = String(data.get("name") || "").trim();
+    const text = String(data.get("text") || "").trim();
+
+    if (text.length < 2) {
+      status.dataset.state = "error";
+      status.textContent = "Please write a few words.";
+      return;
+    }
+
+    if (!INVITE_ENDPOINT) {
+      status.dataset.state = "error";
+      status.textContent = "The guest book isn't open yet. Please try again later.";
+      return;
+    }
+
+    submit.disabled = true;
+    submit.textContent = "SENDING…";
+    status.textContent = "";
+
+    try {
+      await fetch(INVITE_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        body: new URLSearchParams({
+          kind: "review",
+          name,
+          text
+        })
+      });
+
+      form.hidden = true;
+      status.dataset.state = "done";
+      status.textContent =
+        "Thank you. Your note will appear on the wall after a quick check.";
+    } catch {
+      submit.disabled = false;
+      submit.textContent = "LEAVE A NOTE";
       status.dataset.state = "error";
       status.textContent = "Something went wrong. Check your connection and try again.";
     }

@@ -17,11 +17,11 @@ import {
   THREE,
   scene,
   camera
-} from "../core/scene.js?v=5d12b72";
+} from "../core/scene.js?v=89a4dbd";
 
 import {
   createStarMap
-} from "../objects/starMap.js?v=5d12b72";
+} from "../objects/starMap.js?v=89a4dbd";
 
 // ---------- Параметры лестницы ----------
 //

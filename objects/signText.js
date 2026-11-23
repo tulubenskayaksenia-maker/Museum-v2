@@ -8,7 +8,7 @@
 // поэтому текст больше не «плавает» в текстурах и не мерцает
 // на фоне панели.
 
-import { THREE } from "../core/scene.js?v=5d12b72";
+import { THREE } from "../core/scene.js?v=89a4dbd";
 
 export const SIGN_BACKGROUND = "#0a0a0b";
 export const SIGN_INK = "#efefef";

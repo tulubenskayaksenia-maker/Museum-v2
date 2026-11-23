@@ -10,22 +10,26 @@
 import {
   THREE,
   scene
-} from "../core/scene.js?v=5d12b72";
+} from "../core/scene.js?v=89a4dbd";
 
 import {
   floorMaterial,
   wallMaterial
-} from "../core/materials.js?v=5d12b72";
+} from "../core/materials.js?v=89a4dbd";
 
 import {
   createArchPortal,
   createWallWithArchOpening
-} from "../objects/arch.js?v=5d12b72";
+} from "../objects/arch.js?v=89a4dbd";
 
 import {
   createSignTexture,
   createSignFaceMaterial
-} from "../objects/signText.js?v=5d12b72";
+} from "../objects/signText.js?v=89a4dbd";
+
+import {
+  createReviewsBoard
+} from "../objects/reviewsBoard.js?v=89a4dbd";
 
 export const SHOP_STICKERS = [
   "logo",
@@ -348,6 +352,16 @@ export function createShopRoom() {
   board.position.set(roomWidth / 2 - 0.5, 4.2, -6);
   board.rotation.y = -Math.PI / 2;
   room.add(board);
+
+  // ==========================================
+  // GUEST BOOK (правая стена, ближе ко входу)
+  // ==========================================
+
+  const guestBook = createReviewsBoard(3.6);
+
+  guestBook.position.set(roomWidth / 2 - 0.45, 4.4, 3.6);
+  guestBook.rotation.y = -Math.PI / 2;
+  room.add(guestBook);
 
   // ==========================================
   // LIGHTING

@@ -5,7 +5,10 @@
  *  - receives an email address from the site form ("Get an invitation");
  *  - writes the guest to the Google Sheet (sheet "Guests");
  *  - immediately sends a ticket email with a calendar file;
- *  - on opening day sends everyone a reminder (sendOpeningReminder).
+ *  - on opening day sends everyone a reminder (sendOpeningReminder);
+ *  - keeps artist applications (sheet "Applications") and guest book
+ *    notes (sheet "Reviews"). A note shows on the shop wall only after
+ *    you tick its "Show" box.
  *
  * Emails go out from your Gmail. Google limit: about 100 emails a day
  * for a regular account. If the limit runs out, the guest waits in a queue
@@ -61,6 +64,11 @@ function doPost(e) {
     return handleApplication_(p);
   }
 
+  // Note for the guest book in the shop
+  if (p.kind === "review") {
+    return handleReview_(p);
+  }
+
   const email = String(p.email || "").trim().toLowerCase();
   const name = String(p.name || "").trim().slice(0, 80);
   const timezone = String(p.timezone || "").slice(0, 60);
@@ -99,7 +107,16 @@ function doPost(e) {
   }
 }
 
-function doGet() {
+function doGet(e) {
+  const p = (e && e.parameter) || {};
+
+  // Approved guest book notes for the shop wall
+  if (p.kind === "reviews") {
+    return ContentService
+      .createTextOutput(JSON.stringify({ reviews: getApprovedReviews_() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   return reply_("Incognito Museum invitations are running.");
 }
 
@@ -422,6 +439,100 @@ function handleApplication_(p) {
   }
 
   return reply_("ok");
+}
+
+// ---------- GUEST BOOK (NOTES ON THE SHOP WALL) ----------
+
+const REVIEWS_SHEET = "Reviews";
+const COL_REVIEW_SHOW = 4; // D: Show (tick to put the note on the wall)
+
+function getReviewsSheet_() {
+  const ss = getSheet_().getParent();
+  let sheet = ss.getSheetByName(REVIEWS_SHEET);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(REVIEWS_SHEET);
+    sheet.appendRow(["Received", "Name", "Note", "Show"]);
+    sheet.setFrozenRows(1);
+    sheet.setColumnWidth(3, 420);
+  }
+
+  return sheet;
+}
+
+function handleReview_(p) {
+  const name = String(p.name || "").trim().slice(0, 40);
+  const text = String(p.text || "").trim().slice(0, 400);
+
+  if (text.length < 2) {
+    return reply_("invalid");
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+
+  let sheet;
+
+  try {
+    sheet = getReviewsSheet_();
+    sheet.appendRow([new Date(), name, text, false]);
+    sheet.getRange(sheet.getLastRow(), COL_REVIEW_SHOW).insertCheckboxes();
+  } finally {
+    lock.releaseLock();
+  }
+
+  // Email to you: a new note is waiting
+  if (MailApp.getRemainingDailyQuota() > 1) {
+    try {
+      MailApp.sendEmail({
+        to: Session.getEffectiveUser().getEmail(),
+        name: SENDER_NAME,
+        subject: "Guest book: new note" + (name ? " from " + name : ""),
+        body:
+          (name || "(no name)") + " wrote:\n\n" + text + "\n\n" +
+          "To show it on the shop wall, tick \"Show\" in the Reviews tab:\n" +
+          sheet.getParent().getUrl()
+      });
+    } catch (err) {
+      console.warn("Review mail failed: " + err);
+    }
+  }
+
+  return reply_("ok");
+}
+
+// Notes you ticked "Show" for, newest first
+function getApprovedReviews_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get("reviews");
+
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const ss = getSheet_().getParent();
+  const sheet = ss.getSheetByName(REVIEWS_SHEET);
+  let list = [];
+
+  if (sheet && sheet.getLastRow() > 1) {
+    list = sheet.getDataRange().getValues().slice(1)
+      .filter((row) => row[COL_REVIEW_SHOW - 1] === true && String(row[2]).trim())
+      .map((row) => ({
+        name: String(row[1] || "").slice(0, 40),
+        text: String(row[2]).slice(0, 400),
+        date: row[0] instanceof Date ? row[0].toISOString() : ""
+      }))
+      .reverse()
+      .slice(0, 40);
+  }
+
+  cache.put("reviews", JSON.stringify(list), 60);
+  return list;
+}
+
+/** Run once if you want the Reviews tab to exist before the first note. */
+function setupReviewsSheet() {
+  getReviewsSheet_();
 }
 
 // ---------- HELPERS ----------

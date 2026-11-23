@@ -1,11 +1,11 @@
 import {
   THREE
-} from "../core/scene.js?v=5d12b72";
+} from "../core/scene.js?v=89a4dbd";
 
 import {
   createSignTexture,
   createSignFaceMaterial
-} from "./signText.js?v=5d12b72";
+} from "./signText.js?v=89a4dbd";
 
 // =====================================================
 // CINEMA SIGN
