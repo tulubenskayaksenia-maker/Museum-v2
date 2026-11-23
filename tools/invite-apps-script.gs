@@ -25,10 +25,10 @@ function guestLink_(ticket) {
 }
 const LOGO_URL = "https://incogmusem.com/assets/brand/logo-light.png";
 
-const OPENING_START = new Date("2026-11-23T19:30:00+02:00");
-const OPENING_END = new Date("2026-11-23T21:30:00+02:00");
+const OPENING_START = new Date("2026-11-23T19:00:00+02:00");
+const OPENING_END = new Date("2026-11-23T21:00:00+02:00");
 const OPENING_DATE_TEXT = "Monday, 23 November 2026";
-const OPENING_TIME_TEXT = "19:30 Israel time";
+const OPENING_TIME_TEXT = "19:00 Israel time";
 
 const SENDER_NAME = "Incognito Museum";
 const SIGNATURE = "Ksenia, Incognito Museum";
@@ -39,7 +39,7 @@ const SHEET_NAME = "Guests";
 // If empty, the reminder is sent without the Discord lines.
 const DISCORD_URL = "https://discord.gg/AKAwH93xq";
 const DISCORD_LINE =
-  "I'll also be on Discord from 19:30, right as the museum opens, for a small, " +
+  "I'll also be on Discord at 19:30 for a small, " +
   "optional conversation: feedback, questions, anything about the museum.\n";
 
 
@@ -218,7 +218,7 @@ function sendTicket_(email, name, ticket) {
         '</table>' +
 
         '<p style="font-size:15px;line-height:1.6;margin:28px 0 14px;">' +
-          'The museum opens online at 19:30. Go to incogmusem.com at that time and walk through ' +
+          'The museum opens online at 19:00. Go to incogmusem.com at that time and walk through ' +
           'the halls together with everyone else. A laptop or a phone is enough, there is nothing to install.' +
         '</p>' +
         '<p style="font-size:15px;line-height:1.6;margin:0 0 14px;">' +
@@ -274,7 +274,7 @@ function calendarFile_(ticket) {
     "DTSTART:" + stamp(OPENING_START),
     "DTEND:" + stamp(OPENING_END),
     "SUMMARY:Incognito Museum opening",
-    "DESCRIPTION:Ticket " + ticket + ". Open " + SITE_URL + " at 19:30 Israel time.",
+    "DESCRIPTION:Ticket " + ticket + ". Open " + SITE_URL + " at 19:00 Israel time.",
     "LOCATION:" + SITE_URL,
     "URL:" + guestLink_(ticket),
     "END:VEVENT",
@@ -338,10 +338,10 @@ function sendPendingReminders_() {
       MailApp.sendEmail({
         to: email,
         name: SENDER_NAME,
-        subject: "Today at 19:30: Incognito Museum opens",
+        subject: "Today at 19:00: Incognito Museum opens",
         body:
           hello + "\n\n" +
-          "we open today at 19:30 Israel time, half an hour later than first announced.\n" +
+          "we open today at 19:00 Israel time.\n" +
           "Here is the link: " + guestLink_(rows[i][3]) + "\n\n" +
           "Your ticket number is " + rows[i][3] + ". You won't need to show it, " +
           "the door will simply be open.\n\n" +
@@ -488,10 +488,10 @@ function testReminderToMe() {
   MailApp.sendEmail({
     to: me,
     name: SENDER_NAME,
-    subject: "TEST: Today at 19:30: Incognito Museum opens",
+    subject: "TEST: Today at 19:00: Incognito Museum opens",
     body:
       "Hi Ksenia,\n\n" +
-      "we open today at 19:30 Israel time, half an hour later than first announced.\n" +
+      "we open today at 19:00 Israel time.\n" +
       "Here is the link: " + guestLink_("IM-TEST") + "\n\n" +
       "Your ticket number is IM-TEST. You won't need to show it, " +
       "the door will simply be open.\n\n" +

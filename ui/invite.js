@@ -173,7 +173,7 @@ export function setupInvite() {
         : justSent
           ? "Your ticket is on its way to your email. "
           : "We sent your ticket by email. ") +
-      "The museum opens on 23 November at 19:30 Israel time. " +
+      "The museum opens on 23 November at 19:00 Israel time. " +
       "Come back to this page then, the door will be open.";
 
     cta.hidden = true;
