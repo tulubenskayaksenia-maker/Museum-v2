@@ -1,5 +1,5 @@
-import { THREE } from "../core/scene.js?v=89a4dbd";
-import { ceilingMaterial } from "../core/materials.js?v=89a4dbd";
+import { THREE } from "../core/scene.js?v=84d1282";
+import { ceilingMaterial } from "../core/materials.js?v=84d1282";
 
 export function createCeiling(parent) {
   const ceiling = new THREE.Group();

@@ -1,6 +1,6 @@
-import { THREE } from "../core/scene.js?v=89a4dbd";
-import { stairMaterial } from "../core/materials.js?v=89a4dbd";
-import { STAIRS } from "../config/layout.js?v=89a4dbd";
+import { THREE } from "../core/scene.js?v=84d1282";
+import { stairMaterial } from "../core/materials.js?v=84d1282";
+import { STAIRS } from "../config/layout.js?v=84d1282";
 
 export function createStairs(parent) {
   const stairs = new THREE.Group();

@@ -1,20 +1,20 @@
 import {
   THREE,
   camera
-} from "../core/scene.js?v=89a4dbd";
+} from "../core/scene.js?v=84d1282";
 
 import {
   createSignTexture,
   createSignFaceMaterial
-} from "./signText.js?v=89a4dbd";
+} from "./signText.js?v=84d1282";
 
 import {
   ARCHES
-} from "../config/layout.js?v=89a4dbd";
+} from "../config/layout.js?v=84d1282";
 
 import {
   hasTicket
-} from "../ui/ticketMenu.js?v=89a4dbd";
+} from "../ui/ticketMenu.js?v=84d1282";
 
 // =====================================================
 // TICKET COMPUTER INDICATORS

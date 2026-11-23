@@ -10,26 +10,26 @@
 import {
   THREE,
   scene
-} from "../core/scene.js?v=89a4dbd";
+} from "../core/scene.js?v=84d1282";
 
 import {
   floorMaterial,
   wallMaterial
-} from "../core/materials.js?v=89a4dbd";
+} from "../core/materials.js?v=84d1282";
 
 import {
   createArchPortal,
   createWallWithArchOpening
-} from "../objects/arch.js?v=89a4dbd";
+} from "../objects/arch.js?v=84d1282";
 
 import {
   createSignTexture,
   createSignFaceMaterial
-} from "../objects/signText.js?v=89a4dbd";
+} from "../objects/signText.js?v=84d1282";
 
 import {
   createReviewsBoard
-} from "../objects/reviewsBoard.js?v=89a4dbd";
+} from "../objects/reviewsBoard.js?v=84d1282";
 
 export const SHOP_STICKERS = [
   "logo",

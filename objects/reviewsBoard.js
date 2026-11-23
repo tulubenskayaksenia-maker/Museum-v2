@@ -7,7 +7,7 @@
 // посетителей (только те, что одобрены в Google-таблице).
 // По клику открывается окно с формой и всеми отзывами.
 
-import { THREE } from "../core/scene.js?v=89a4dbd";
+import { THREE } from "../core/scene.js?v=84d1282";
 
 const INK = "#efefef";
 const MUTED = "rgba(239, 239, 239, 0.55)";
