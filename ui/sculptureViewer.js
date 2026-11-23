@@ -1,6 +1,6 @@
 import {
   THREE
-} from "../core/scene.js?v=7500b44";
+} from "../core/scene.js?v=ff3bff6";
 
 // =====================================================
 // DOM

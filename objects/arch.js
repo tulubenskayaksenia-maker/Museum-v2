@@ -1,13 +1,13 @@
-import { THREE } from "../core/scene.js?v=7500b44";
+import { THREE } from "../core/scene.js?v=ff3bff6";
 
 import {
   archMaterial,
   darkMaterial
-} from "../core/materials.js?v=7500b44";
+} from "../core/materials.js?v=ff3bff6";
 
 import {
   ARCHES
-} from "../config/layout.js?v=7500b44";
+} from "../config/layout.js?v=ff3bff6";
 
 // =====================================================
 // БОКОВАЯ АРКА В ХОЛЛЕ

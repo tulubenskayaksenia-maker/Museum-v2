@@ -1,21 +1,21 @@
 import {
   THREE,
   scene
-} from "../core/scene.js?v=7500b44";
+} from "../core/scene.js?v=ff3bff6";
 
 import {
   floorMaterial,
   wallMaterial
-} from "../core/materials.js?v=7500b44";
+} from "../core/materials.js?v=ff3bff6";
 
 import {
   createWallArtwork
-} from "../objects/artwork.js?v=7500b44";
+} from "../objects/artwork.js?v=ff3bff6";
 
 import {
   createArchPortal,
   createWallWithArchOpening
-} from "../objects/arch.js?v=7500b44";
+} from "../objects/arch.js?v=ff3bff6";
 
 export function createCorridorLeftRoom01() {
   const room = new THREE.Group();

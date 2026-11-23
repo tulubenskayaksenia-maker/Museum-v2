@@ -2,119 +2,119 @@ import {
   scene,
   camera,
   renderer
-} from "./core/scene.js?v=7500b44";
+} from "./core/scene.js?v=ff3bff6";
 
 import {
   createSky
-} from "./environment/sky.js?v=7500b44";
+} from "./environment/sky.js?v=ff3bff6";
 
 import {
   createLights
-} from "./core/lights.js?v=7500b44";
+} from "./core/lights.js?v=ff3bff6";
 
 import {
   createEntrance
-} from "./rooms/entrance.js?v=7500b44";
+} from "./rooms/entrance.js?v=ff3bff6";
 
 import {
   createSideRoom
-} from "./rooms/sideRoom.js?v=7500b44";
+} from "./rooms/sideRoom.js?v=ff3bff6";
 
 import {
   createFacilitiesRoom
-} from "./rooms/facilitiesRoom.js?v=7500b44";
+} from "./rooms/facilitiesRoom.js?v=ff3bff6";
 
 import {
   createRestroom
-} from "./rooms/restroom.js?v=7500b44";
+} from "./rooms/restroom.js?v=ff3bff6";
 
 import {
   createCorridor
-} from "./rooms/corridor.js?v=7500b44";
+} from "./rooms/corridor.js?v=ff3bff6";
 
 import {
   createCorridorLeftRoom01
-} from "./rooms/corridorLeftRoom01.js?v=7500b44";
+} from "./rooms/corridorLeftRoom01.js?v=ff3bff6";
 
 import {
   createCorridorRightRoom01
-} from "./rooms/corridorRightRoom01.js?v=7500b44";
+} from "./rooms/corridorRightRoom01.js?v=ff3bff6";
 
 import {
   createCorridorLeftRoom02,
   updateCorridorLeftRoom02
-} from "./rooms/corridorLeftRoom02.js?v=7500b44";
+} from "./rooms/corridorLeftRoom02.js?v=ff3bff6";
 
 import {
   createCinemaRoom
-} from "./rooms/cinemaRoom.js?v=7500b44";
+} from "./rooms/cinemaRoom.js?v=ff3bff6";
 
 import {
   createShopRoom
-} from "./rooms/shopRoom.js?v=7500b44";
+} from "./rooms/shopRoom.js?v=ff3bff6";
 
 import {
   createFireStairs
-} from "./rooms/fireStairs.js?v=7500b44";
+} from "./rooms/fireStairs.js?v=ff3bff6";
 
 import {
   setupShopMenu
-} from "./ui/shopMenu.js?v=7500b44";
+} from "./ui/shopMenu.js?v=ff3bff6";
 
 import {
   setupInfoBoards
-} from "./ui/infoBoards.js?v=7500b44";
+} from "./ui/infoBoards.js?v=ff3bff6";
 
 import {
   setupSound
-} from "./ui/sound.js?v=7500b44";
+} from "./ui/sound.js?v=ff3bff6";
 
 import {
   createCorridorSigns
-} from "./objects/corridorSigns.js?v=7500b44";
+} from "./objects/corridorSigns.js?v=ff3bff6";
 
 import {
   updateTicketBoothIndicator
-} from "./objects/ticketBooth.js?v=7500b44";
+} from "./objects/ticketBooth.js?v=ff3bff6";
 
 import {
   setupSculptureViewer
-} from "./ui/sculptureViewer.js?v=7500b44";
+} from "./ui/sculptureViewer.js?v=ff3bff6";
 
 import {
   setupMovement,
   updateMovement
-} from "./player/movement.js?v=7500b44";
+} from "./player/movement.js?v=ff3bff6";
 
 import {
   setupTicketMenu
-} from "./ui/ticketMenu.js?v=7500b44";
+} from "./ui/ticketMenu.js?v=ff3bff6";
 
 import {
   setupCinemaViewer,
   setCinemaFilm
-} from "./ui/cinemaViewer.js?v=7500b44";
+} from "./ui/cinemaViewer.js?v=ff3bff6";
 
 import {
   setupOnboarding
-} from "./ui/onboarding.js?v=7500b44";
+} from "./ui/onboarding.js?v=ff3bff6";
 
 import {
   isMuseumLocked,
   setupInvite
-} from "./ui/invite.js?v=7500b44";
+} from "./ui/invite.js?v=ff3bff6";
 
 import {
   setupMobileControls
-} from "./ui/mobileControls.js?v=7500b44";
+} from "./ui/mobileControls.js?v=ff3bff6";
 
 import {
   setupDesktopMouseControls
-} from "./ui/desktopMouseControls.js?v=7500b44";
+} from "./ui/desktopMouseControls.js?v=ff3bff6";
 
 import {
   updateArtworkViewer
-} from "./objects/artwork.js?v=7500b44";
+} from "./objects/artwork.js?v=ff3bff6";
 
 // =====================================================
 // UI — создаём интерфейсы до комнат и движения
