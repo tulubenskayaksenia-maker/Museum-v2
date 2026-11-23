@@ -39,7 +39,7 @@ const SHEET_NAME = "Guests";
 // If empty, the reminder is sent without the Discord lines.
 const DISCORD_URL = "https://discord.gg/AKAwH93xq";
 const DISCORD_LINE =
-  "I'll also be on Discord at 19:30 for a small, " +
+  "I'll also be on Discord at 20:00 for a small, " +
   "optional conversation: feedback, questions, anything about the museum.\n";
 
 
