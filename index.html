@@ -725,7 +725,7 @@
 
 
   <!-- ===============================================
-       LOBBY BOARDS: MAP + OPEN CALL
+       LOBBY BOARDS: MAP + OPEN CALL + GUEST BOOK
   ================================================ -->
 
   <div id="info-board-menu" aria-hidden="true">
@@ -772,6 +772,33 @@
         <div class="open-call-status" role="status"></div>
 
         <p class="open-call-contact" hidden></p>
+      </div>
+
+      <!-- Guest book (shop) -->
+      <div class="info-board-panel" data-board="reviews">
+        <div class="ticket-label">
+          GUEST BOOK
+        </div>
+
+        <h2>
+          Leave a note
+        </h2>
+
+        <p class="ticket-description">
+          What did you think of the museum? Your note will appear
+          on the wall in the shop after a quick check.
+        </p>
+
+        <form class="review-form open-call-form" novalidate onsubmit="event.preventDefault()">
+          <input type="text" name="name" placeholder="Your name (optional)" autocomplete="name" maxlength="40" />
+          <textarea name="text" rows="4" maxlength="400" placeholder="Your note" required></textarea>
+          <input class="museum-invite-trap" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
+          <button type="submit">LEAVE A NOTE</button>
+        </form>
+
+        <div class="review-status open-call-status" role="status"></div>
+
+        <div class="review-list" aria-label="Notes from visitors"></div>
       </div>
 
     </div>

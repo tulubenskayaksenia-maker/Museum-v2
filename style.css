@@ -1924,3 +1924,37 @@ body.museum-locked > :not(#museum-invite):not(canvas):not(script) {
 .open-call-contact a {
   color: #f3f1eb;
 }
+
+/* Guest book: notes under the form */
+
+.review-list {
+  margin-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.review-list:empty {
+  display: none;
+}
+
+.review-item {
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.review-text {
+  margin: 0;
+  color: #f3f1eb;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 16px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.review-name {
+  margin-top: 8px;
+  color: rgba(235, 236, 240, 0.55);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}

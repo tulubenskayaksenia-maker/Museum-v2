@@ -27,6 +27,10 @@ import {
   createSignFaceMaterial
 } from "../objects/signText.js";
 
+import {
+  createReviewsBoard
+} from "../objects/reviewsBoard.js";
+
 export const SHOP_STICKERS = [
   "logo",
   "coat",
@@ -348,6 +352,16 @@ export function createShopRoom() {
   board.position.set(roomWidth / 2 - 0.5, 4.2, -6);
   board.rotation.y = -Math.PI / 2;
   room.add(board);
+
+  // ==========================================
+  // GUEST BOOK (правая стена, ближе ко входу)
+  // ==========================================
+
+  const guestBook = createReviewsBoard(3.6);
+
+  guestBook.position.set(roomWidth / 2 - 0.45, 4.4, 3.6);
+  guestBook.rotation.y = -Math.PI / 2;
+  room.add(guestBook);
 
   // ==========================================
   // LIGHTING
