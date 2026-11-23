@@ -481,3 +481,22 @@ function escape_(s) {
 function reply_(message) {
   return ContentService.createTextOutput(message);
 }
+
+/** Sends the opening-day reminder to yourself only, to check it. Does not touch the sheet. */
+function testReminderToMe() {
+  const me = Session.getActiveUser().getEmail();
+  MailApp.sendEmail({
+    to: me,
+    name: SENDER_NAME,
+    subject: "TEST: Today at 19:00: Incognito Museum opens",
+    body:
+      "Hi Ksenia,\n\n" +
+      "we open today at 19:00 Israel time.\n" +
+      "Here is the link: " + guestLink_("IM-TEST") + "\n\n" +
+      "Your ticket number is IM-TEST. You won't need to show it, " +
+      "the door will simply be open.\n\n" +
+      (DISCORD_URL ? DISCORD_LINE + DISCORD_URL + "\n\n" : "") +
+      "See you inside,\n" + SIGNATURE
+  });
+  Logger.log("Test reminder sent to " + me);
+}
