@@ -1,4 +1,4 @@
-import { THREE } from "./scene.js?v=ff3bff6";
+import { THREE } from "./scene.js?v=5d12b72";
 
 // ==========================================
 // ГЛАДКИЙ ПОЛ

@@ -2,7 +2,7 @@ import {
   THREE,
   scene,
   camera
-} from "../core/scene.js?v=ff3bff6";
+} from "../core/scene.js?v=5d12b72";
 
 // =====================================================
 // ОБЩИЕ МАТЕРИАЛЫ

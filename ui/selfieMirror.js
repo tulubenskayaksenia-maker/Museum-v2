@@ -10,8 +10,8 @@
 // Снимок — с аркой-зеркалом, логотипом и подписью; сохранить
 // или поделиться. Видео никуда не отправляется.
 
-import { THREE, scene } from "../core/scene.js?v=ff3bff6";
-import { SELFIE_VIEW } from "../objects/restroomDecor.js?v=ff3bff6";
+import { THREE, scene } from "../core/scene.js?v=5d12b72";
+import { SELFIE_VIEW } from "../objects/restroomDecor.js?v=5d12b72";
 
 const MP_VERSION = "0.10.14";
 const MP_BUNDLE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VERSION}/vision_bundle.mjs`;

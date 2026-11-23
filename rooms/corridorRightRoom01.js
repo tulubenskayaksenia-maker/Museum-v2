@@ -3,19 +3,19 @@ import {
   scene,
   camera,
   renderer
-} from "../core/scene.js?v=ff3bff6";
+} from "../core/scene.js?v=5d12b72";
 
-import { getAimPoint } from "../core/aim.js?v=ff3bff6";
+import { getAimPoint } from "../core/aim.js?v=5d12b72";
 
 import {
   floorMaterial,
   wallMaterial
-} from "../core/materials.js?v=ff3bff6";
+} from "../core/materials.js?v=5d12b72";
 
 import {
   createArchPortal,
   createWallWithArchOpening
-} from "../objects/arch.js?v=ff3bff6";
+} from "../objects/arch.js?v=5d12b72";
 
 
 export function createCorridorRightRoom01() {
