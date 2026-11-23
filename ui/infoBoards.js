@@ -53,6 +53,13 @@ export function setupInfoBoards() {
   setupOpenCallForm();
   setupReviewForm();
   loadReviews();
+
+  // Свежие отзывы при каждом входе в магазин, даже если сайт открыт давно
+  window.addEventListener("museum-navigation-state", (event) => {
+    if (event.detail?.room === "shop") {
+      loadReviews();
+    }
+  });
 }
 
 export function openInfoBoard(kind) {
@@ -186,8 +193,8 @@ async function loadReviews() {
     return;
   }
 
-  // не чаще раза в минуту
-  if (Date.now() - reviewsLoadedAt < 60000) {
+  // не чаще раза в 20 секунд (сервер и так кэширует на минуту)
+  if (Date.now() - reviewsLoadedAt < 20000) {
     return;
   }
 
