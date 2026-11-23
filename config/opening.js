@@ -6,7 +6,7 @@
 // До этого момента посетители видят экран-приглашение,
 // после — музей открывается всем автоматически.
 export const OPENING_TIME =
-  new Date("2026-11-23T19:00:00+02:00");
+  new Date("2026-11-23T18:00:00+02:00");
 
 export const OPENING_LABEL =
   "23 November, 19:00 Israel time";
